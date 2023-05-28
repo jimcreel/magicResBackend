@@ -1,6 +1,7 @@
 {
   "name": "your-app-name",
   "version": "1.0.0",
+  "proxy": "https://magicres-backend.herokuapp.com",
   "description": "",
   "main": "server.js",
   "scripts": {

@@ -71,7 +71,7 @@ app.use('/api/users', require('./controllers/users'))
 
 /* Mount routes/
 --------------------------------------------------------------- */
-app.get('/availability/:resort/:pass', async (req, res) => {
+app.get('/api/availability/:resort/:pass', async (req, res) => {
     let resortNameUrl = req.params.resort == 'DLR' ? 'disneyland' : 'disneyworld';
     let pass = req.params.pass
     const headers = {
@@ -149,8 +149,7 @@ app.get('/logout', function(req, res){
   });
 
 
-app.use('/requests', requestsCtrl)
-app.use('/users', usersCtrl)
+
 
 
 
