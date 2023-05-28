@@ -23,8 +23,7 @@ let userProfile;
 
 // refresh the browser when nodemon restarts
 
-const express = require('express');
-const app = express();
+
 
 // Define a route handler for requests with the "/api" prefix
 app.use('/api', (req, res, next) => {
