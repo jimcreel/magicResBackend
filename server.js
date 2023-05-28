@@ -23,6 +23,22 @@ let userProfile;
 
 // refresh the browser when nodemon restarts
 
+const express = require('express');
+const app = express();
+
+// Define a route handler for requests with the "/api" prefix
+app.use('/api', (req, res, next) => {
+  
+  req.url = req.url.replace(/^\/api/, '');
+
+  
+  next();
+});
+
+
+app.listen(3000, () => {
+  console.log('Server listening on port 3000');
+});
 
 
 
