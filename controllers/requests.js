@@ -19,7 +19,7 @@ const authMiddleWare = (req, res, next) => {
       try {
         const decodedToken = jwt.decode(token, config.jwtSecret);
         req.user = decodedToken;
-        console.log(decodedToken)
+        
         next();
       } catch (error) {
         res.status(401).json({ message: 'Invalid token' });

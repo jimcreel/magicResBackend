@@ -75,48 +75,26 @@ router.post('/login', async (req, res) => {
 })
 
 
-
-// Create Route: creates a new user
-router.post('/', (req, res) => {
-    
-    db.User.create(req.body)
-    .then(user => {
-        res.redirect(`/users/${user.id}`)
-    })
-    .catch(function(err){
-    })
-});
-
 // Show Route: shows the user details and link to edit/delete
 router.get('/profile', authMiddleWare,  (req, res) => {
    
 	db.User.findById(req.user.id)
     .then(user => {
-        console.log('user profile request', user)
+        
         res.json(user)
     })
         });
 
-// Show Route: shows the user edit form
-router.get('/:id/edit',    function (req, res) {
-    db.User.findById(req.params.id)
-    .then(user => {
-    res.render('./user/user-edit.ejs',
-    {user: user})
-    })
-    .catch(function(err){
-    })
-});
 
 // UPDATE Route: updates the user details
 // 
-router.put('/:id', function (req, res) {
+router.put('/', authMiddleWare, function (req, res) {
     db.User.findByIdAndUpdate(
-        req.params.id,
+        req.user.id,
         req.body,
         {new: true})
         .then(user => {
-            res.redirect(`/users/${user.id}`)
+            res.json(user)
         })
         .catch(function(err){
         })
