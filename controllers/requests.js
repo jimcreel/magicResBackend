@@ -10,8 +10,24 @@ NOTE: Remember that all routes on this page are prefixed with `localhost:3000/re
 const express = require('express')
 // Router allows us to handle routing outisde of server.js
 const router = express.Router()
+const config = require('../jwt.config.js')
+const jwt = require('jwt-simple');
 
-
+const authMiddleWare = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (token) {
+      try {
+        const decodedToken = jwt.decode(token, config.jwtSecret);
+        req.user = decodedToken;
+        console.log(decodedToken)
+        next();
+      } catch (error) {
+        res.status(401).json({ message: 'Invalid token' });
+      }
+    } else {
+      res.status(401).json({ message: 'No token supplied' });
+    }
+  };
 
 /* Require the db connection, and models
 --------------------------------------------------------------- */
@@ -26,7 +42,7 @@ const ensureLoggedIn = require('../config/ensureLoggedIn');
 
 
 // New Route: GET localhost:3000/requests/new
-router.get('/new/:userId/:date?/:resortPark?', ensureLoggedIn, (req, res) => {
+router.get('/new/:userId/:date?/:resortPark?',  (req, res) => {
             res.render('./request/request-new.ejs', { 
             date: req.params.date,
             resortPark: req.params.resortPark
@@ -48,9 +64,17 @@ router.get('/:userId',  (req, res) => {
 
 
 // Create Route: POST localhost:3000/requests/
-router.post('/create/:userId',  (req, res) => {
+// Create Route: POST localhost:3000/requests/
+router.post('/create', authMiddleWare, (req, res) => {
+    
+    
+    const request = {
+        ...req.body,
+        userId: req.user.id
+    }
+    
     db.User.findByIdAndUpdate(
-        req.params.userId,
+        req.user.id, // Corrected user ID syntax
         { $push: { requests: req.body } },
         { new: true }
     )
@@ -59,7 +83,8 @@ router.post('/create/:userId',  (req, res) => {
         
 });
 
-router.get('/:requestId/edit', ensureLoggedIn, (req, res) => {
+
+router.get('/:requestId/edit', authMiddleWare, (req, res) => {
     db.User.findOne({ 'requests._id': req.params.requestId })
         .then(user => {
             const request = user.requests.id(req.params.requestId)
@@ -71,7 +96,7 @@ router.get('/:requestId/edit', ensureLoggedIn, (req, res) => {
 });
 
 
-router.put('/:requestId', ensureLoggedIn, (req, res) => {
+router.put('/:requestId',  (req, res) => {
     db.User.findOneAndUpdate({ 'requests._id': req.params.requestId},
     {$set: {
         'requests.$.date': req.body.date,
@@ -86,7 +111,7 @@ router.put('/:requestId', ensureLoggedIn, (req, res) => {
 
 
 // Destroy Route: DELETE localhost:3000/reviews/:id
-router.delete('/:id',  (req, res) => {
+router.delete('/:id', authMiddleWare, (req, res) => {
     db.User.findOneAndUpdate(
         { 'requests._id': req.params.id },
         { $pull: { requests: { _id: req.params.id } } },
