@@ -10,6 +10,8 @@ NOTE: Remember that all routes on this page are prefixed with `localhost:3000/us
 const express = require('express')
 // Router allows us to handle routing outisde of server.js
 const router = express.Router()
+const config = require('../jwt.config.js')
+const jwt = require('jwt-simple');
 
 
 
@@ -18,59 +20,115 @@ const router = express.Router()
 const db = require('../models')
 
 // Require the auth middleware
-const ensureLoggedIn = require('../config/ensureLoggedIn');
+const authMiddleWare = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (token) {
+      try {
+        const decodedToken = jwt.decode(token, config.jwtSecret);
+        req.user = decodedToken;
+        
+        next();
+      } catch (error) {
+        res.status(401).json({ message: 'Invalid token' });
+      }
+    } else {
+      res.status(401).json({ message: 'No token supplied' });
+    }
+  };
 
 /* Routes
 --------------------------------------------------------------- */
+// LOG IN (log into a user account)
 
-// Show Route: shows the new user form
-router.get ('/new', (req, res) => {
-    res.render('./user/user-new.ejs')
+router.post('/signup', (req, res) => {
+    // Create a new user
+    db.User.create(req.body)
+        .then(user => {
+            // if the database creates a user successfully, assign a JWT to the user and send the JWT as the response
+            const token = jwt.encode({ id: user.id }, config.jwtSecret)
+            res.json({ token: token })
+        })
+        // send an error if the database fails to create a user
+        .catch(() => {
+            res.json(({ data: 'Could not create a new user, try again' }))
+        })
 })
 
-// Create Route: creates a new user
-router.post('/', (req, res) => {
-    db.User.create(req.body)
-    .then(user => {
-        res.redirect(`/users/${user.id}`)
-    })
-    .catch(function(err){
-    })
-});
+router.post('/login', async (req, res) => {
+    // attempt to find the user by their email in the database
+    const foundUser = await db.User.findOne({ email: req.body.email })
+    // check to:
+    // 1. make sure the user was found in the database
+    // 2. make sure the user entered in the correct password
+    if (foundUser && foundUser.password === req.body.password) {
+        // if the above applies, send the JWT to the browser
+        const payload = { id: foundUser.id }
+        const token = jwt.encode(payload, config.jwtSecret)
+        res.json({
+            token: token,
+            email: foundUser.email
+        })
+        // if the user was not found in the database OR their password was incorrect, send an error
+    } else {
+        res.json({ data: 'Incorrect email/password' })
+    }
+})
+
 
 // Show Route: shows the user details and link to edit/delete
-router.get('/:id',  (req, res) => {
-	db.User.findById(req.params.id)
+router.get('/profile', authMiddleWare,  (req, res) => {
+   
+	db.User.findById(req.user.id)
     .then(user => {
+        
         res.json(user)
     })
         });
 
-// Show Route: shows the user edit form
-router.get('/:id/edit',   ensureLoggedIn, function (req, res) {
-    db.User.findById(req.params.id)
-    .then(user => {
-    res.render('./user/user-edit.ejs',
-    {user: user})
-    })
-    .catch(function(err){
-    })
-});
 
 // UPDATE Route: updates the user details
 // 
-router.put('/:id', function (req, res) {
+
+
+router.put('/password', authMiddleWare, function (req, res) {
+    db.User.findById(req.user.id)
+    .then(user => {
+        if (user.password === req.body.oldPassword) {
+            db.User.findByIdAndUpdate(
+                req.user.id,
+                { password: req.body.newPassword },
+                { new: true })
+                .then(user => {
+                    const payload = { id: user.id }
+                    const token = jwt.encode(payload, config.jwtSecret)
+                    res.json({
+                        token: token,
+                        email: user.email
+
+                })
+                
+            })
+        }
+        else {
+            res.json({ data: 'Incorrect password' })
+        }
+    })
+    .catch(function (err) {
+    }
+    )
+});
+
+router.put('/', authMiddleWare, function (req, res) {
     db.User.findByIdAndUpdate(
-        req.params.id,
+        req.user.id,
         req.body,
         {new: true})
         .then(user => {
-            res.redirect(`/users/${user.id}`)
+            res.json(user)
         })
         .catch(function(err){
         })
 });
-
 
 
 // Destroy Route: DELETE localhost:3000/reviews/:id

@@ -3,21 +3,17 @@
 require('dotenv').config()
 const path = require('path');
 const express = require('express');
-
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
-const passport = require('passport');
 const ensureLoggedIn = require('./config/ensureLoggedIn');
 const cors = require('cors');
-
 const db = require('./models');
-require('./config/passport');
 const requestsCtrl = require('./controllers/requests')
 const usersCtrl = require('./controllers/users')
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { default: axios } = require('axios');
 const app = express();
-let userProfile;
+const jwt = require('jwt-simple');
+
 // Require the auth middleware
 
 
@@ -53,8 +49,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-app.use(passport.initialize());
-app.use(passport.session());
+
 // Add this middleware BELOW passport middleware
 
   
@@ -88,26 +83,11 @@ app.get('/api/availability/:resort/:pass', async (req, res) => {
     }
   });
   
-app.get('/auth/google', passport.authenticate(
-    'google', 
-    { scope: ['profile', 'email'], 
-    prompt: 'select_account'    
-    }
-));
 
 
-app.get ('/oauth2callback', passport.authenticate(
-    'google',
-    {
-        successRedirect: '/success',
-        failureRedirect: '/error'
-    }
-));
 
-app.get('/success', (req, res) => {    
-    res.render('index')
-    });
-    
+
+
 
 
 
@@ -120,7 +100,7 @@ app.get('/', function (req, res) {
     res.render('index', {user: req.user});
 })
 
-app.get('/home/:resort', ensureLoggedIn, function (req, res) {
+app.get('/home/:resort', function (req, res) {
     let resort = req.params.resort;
     db.api.getResorts(req, res, resort)
     .then(availabilities => {
@@ -153,6 +133,3 @@ app.get('/logout', function(req, res){
 
 
 
-app.listen(process.env.PORT, function () {
-    console.log('Express is listening to port', process.env.PORT);
-});
