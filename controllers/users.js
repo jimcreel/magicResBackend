@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
         })
         // if the user was not found in the database OR their password was incorrect, send an error
     } else {
-        res.sendStatus(401)
+        res.json({ data: 'Incorrect email/password' })
     }
 })
 
@@ -88,6 +88,36 @@ router.get('/profile', authMiddleWare,  (req, res) => {
 
 // UPDATE Route: updates the user details
 // 
+
+
+router.put('/password', authMiddleWare, function (req, res) {
+    db.User.findById(req.user.id)
+    .then(user => {
+        if (user.password === req.body.oldPassword) {
+            db.User.findByIdAndUpdate(
+                req.user.id,
+                { password: req.body.newPassword },
+                { new: true })
+                .then(user => {
+                    const payload = { id: user.id }
+                    const token = jwt.encode(payload, config.jwtSecret)
+                    res.json({
+                        token: token,
+                        email: user.email
+
+                })
+                
+            })
+        }
+        else {
+            res.json({ data: 'Incorrect password' })
+        }
+    })
+    .catch(function (err) {
+    }
+    )
+});
+
 router.put('/', authMiddleWare, function (req, res) {
     db.User.findByIdAndUpdate(
         req.user.id,
@@ -99,7 +129,6 @@ router.put('/', authMiddleWare, function (req, res) {
         .catch(function(err){
         })
 });
-
 
 
 // Destroy Route: DELETE localhost:3000/reviews/:id
