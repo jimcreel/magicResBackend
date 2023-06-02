@@ -18,10 +18,6 @@ const jwt = require('jwt-simple');
 
 
 // refresh the browser when nodemon restarts
-
-app.use(cors())
-
-// Define a route handler for requests with the "/api" prefix
 app.use('/api', (req, res, next) => {
   
   req.url = req.url.replace(/^\/api/, '');
@@ -29,6 +25,11 @@ app.use('/api', (req, res, next) => {
   
   next();
 });
+
+app.use(cors())
+
+// Define a route handler for requests with the "/api" prefix
+
 
 
 app.listen(3000, () => {
