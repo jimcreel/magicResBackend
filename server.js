@@ -23,7 +23,7 @@ let userProfile;
 
 // refresh the browser when nodemon restarts
 
-
+app.use(cors())
 
 // Define a route handler for requests with the "/api" prefix
 app.use('/api', (req, res, next) => {
@@ -44,7 +44,7 @@ app.listen(3000, () => {
 
 /* Middleware (app.use)
 --------------------------------------------------------------- */
-app.use(cors())
+
 app.use(express.static('public'))
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
@@ -58,7 +58,7 @@ app.use(passport.session());
 // Add this middleware BELOW passport middleware
 
   
-app.options('*', cors())
+
 app.use('/api/requests', require('./controllers/requests'))
 app.use('/api/users', require('./controllers/users'))
 
