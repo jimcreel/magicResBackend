@@ -31,6 +31,7 @@ app.use('/api', (req, res, next) => {
 // Define a route handler for requests with the "/api" prefix
 
 
+const PORT = process.env.PORT
 
 app.listen(PORT, () => {
   console.log('Server listening on port 3000');
