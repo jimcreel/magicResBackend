@@ -28,8 +28,10 @@ const requestSchema = new mongoose.Schema ({
         required: true,
         default: false
     },
-    users: {
-        type: Number
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
     }
 });
 
