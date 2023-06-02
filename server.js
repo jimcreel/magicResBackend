@@ -16,7 +16,7 @@ const jwt = require('jwt-simple');
 
 // Require the auth middleware
 
-
+app.use(cors())
 // refresh the browser when nodemon restarts
 app.use('/api', (req, res, next) => {
   
@@ -26,7 +26,7 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-app.use(cors())
+
 
 // Define a route handler for requests with the "/api" prefix
 
