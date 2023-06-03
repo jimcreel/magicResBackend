@@ -7,6 +7,7 @@ NOTE: Remember that all routes on this page are prefixed with `localhost:3000/us
 
 /* Require modules
 --------------------------------------------------------------- */
+const bcrypt = require('bcrypt')
 const express = require('express')
 // Router allows us to handle routing outisde of server.js
 const router = express.Router()
@@ -26,7 +27,6 @@ const authMiddleWare = (req, res, next) => {
       try {
         const decodedToken = jwt.decode(token, config.jwtSecret);
         req.user = decodedToken;
-        
         next();
       } catch (error) {
         res.status(401).json({ message: 'Invalid token' });
@@ -41,37 +41,41 @@ const authMiddleWare = (req, res, next) => {
 // LOG IN (log into a user account)
 
 router.post('/signup', (req, res) => {
-    // Create a new user
-    db.User.create(req.body)
-        .then(user => {
-            // if the database creates a user successfully, assign a JWT to the user and send the JWT as the response
-            const token = jwt.encode({ id: user.id }, config.jwtSecret)
-            res.json({ token: token })
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) throw err
+        bcrypt.hash(req.body.password, salt, (err, hash) => {
+            if (err) throw err
+            req.body.password = hash
+            db.User.create(req.body)
+                .then(user => {
+                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                    res.json({ token: token })
+                })
+                .catch(() => {
+                    res.json(({ data: 'Could not create a new user, try again' }))
+                })
         })
-        // send an error if the database fails to create a user
-        .catch(() => {
-            res.json(({ data: 'Could not create a new user, try again' }))
-        })
+    })
 })
+    
 
 router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     const foundUser = await db.User.findOne({ email: req.body.email })
-    // check to:
-    // 1. make sure the user was found in the database
-    // 2. make sure the user entered in the correct password
-    if (foundUser && foundUser.password === req.body.password) {
-        // if the above applies, send the JWT to the browser
-        const payload = { id: foundUser.id }
-        const token = jwt.encode(payload, config.jwtSecret)
-        res.json({
-            token: token,
-            email: foundUser.email
-        })
-        // if the user was not found in the database OR their password was incorrect, send an error
-    } else {
-        res.json({ data: 'Incorrect email/password' })
-    }
+    bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
+        if (err) throw err
+        if (isMatch) {
+            const payload = { id: foundUser.id }
+            const token = jwt.encode(payload, config.jwtSecret)
+            res.json({
+                token: token,
+                email: foundUser.email
+            })
+        } else {
+            res.json({ data: 'Incorrect email/password' })
+        }
+    })
+
 })
 
 
@@ -90,33 +94,43 @@ router.get('/profile', authMiddleWare,  (req, res) => {
 // 
 
 
-router.put('/password', authMiddleWare, function (req, res) {
+router.put('/change-password', authMiddleWare, function (req, res) {
+    // check req.user.oldPassword against the db
     db.User.findById(req.user.id)
-    .then(user => {
-        if (user.password === req.body.oldPassword) {
-            db.User.findByIdAndUpdate(
-                req.user.id,
-                { password: req.body.newPassword },
-                { new: true })
-                .then(user => {
-                    const payload = { id: user.id }
-                    const token = jwt.encode(payload, config.jwtSecret)
-                    res.json({
-                        token: token,
-                        email: user.email
-
-                })
-                
+        .then(user => {
+            bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
+                console.log(isMatch? 'match' : 'no match')
+                if (err) throw err
+                if (isMatch) {
+                    bcrypt.genSalt(10, (err, salt) => {
+                        if (err) throw err
+                        bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+                            if (err) throw err
+                            req.body.newPassword = hash
+                            db.User.findByIdAndUpdate(
+                                req.user.id,
+                                { password: req.body.newPassword },
+                                { new: true })
+                                .then(user => {
+                                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                                    console.log(token)
+                                    res.json({ token: token })
+                                })
+                                .catch(function (err) {
+                                })
+                        })
+                    })
+                } else {
+                    res.json({ data: 'Incorrect password' })
+                }
             })
-        }
-        else {
-            res.json({ data: 'Incorrect password' })
-        }
-    })
-    .catch(function (err) {
-    }
-    )
-});
+        })
+})
+
+
+    
+
+
 
 router.put('/', authMiddleWare, function (req, res) {
     db.User.findByIdAndUpdate(
