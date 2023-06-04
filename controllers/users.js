@@ -93,36 +93,31 @@ router.get('/profile', authMiddleWare,  (req, res) => {
 // UPDATE Route: updates the user details
 // 
 
+router.put('/change-password/:hash', function (req, res) {
+    const hashUrl = req.params.hash; // Access the `hash` parameter
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) throw err
+        bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+            if (err) throw err
+            req.body.newPassword = hash
+            db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword })
+                .then(user => {
+                    console.log(user)
+                    res.json(user)
+                })
+                .catch(err => {
+                    console.log(err)
+                    res.json({ data: 'Could not update the user' })
+                })
+        })
+    })
+})
+
+
 
 router.put('/change-password', authMiddleWare, function (req, res) {
     // check req.user.oldPassword against the db
-    if (req.body.token) {
-        //check to see if the token matches the passReset field
-        db.User.find ({passReset: req.body.token})
-        .then(user => {
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            } else {
-                bcrypt.genSalt(10, (err, salt) => {
-                    if (err) throw err
-                    bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
-                        if (err) throw err
-                        req.body.newPassword = hash
-                        db.User.findByIdAndUpdate(
-                            user._id,
-                            { password: req.body.newPassword },
-                            { new: true })
-                            .then(updatedUser => {
-                                const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
-                                res.json({ token: token })
-                            })
-                            .catch(function (err) {
-                            })
-                    })
-                })
-            }
-        }
-    }
+    
     db.User.findById(req.user.id)
         .then(user => {
             bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
@@ -151,17 +146,38 @@ router.put('/change-password', authMiddleWare, function (req, res) {
                 }
             })
         })
-})
+    }
+)
 
-router.get('/password-reset/:hash'), (req, res) => {
-    db.User.find({passwordReset: req.params.hash})
+
+
+router.put('/password-reset/:hash'), (req, res) => {
+    db.User.find({passReset: hash})
     .then(user => {
-        res.json(user)
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+                if (err) throw err
+                req.body.newPassword = hash
+                db.User.findByIdAndUpdate(
+                    user._id,
+                    { password: req.body.newPassword },
+                    { new: true })
+                    .then(updatedUser => {
+                        const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
+                        res.json({ token: token })
+                    })
+                    .catch(function (err) {
+                    })
+            })
+    })
     })
     .catch((err) =>{
         res.json(err)
     })
 }
+
+
+
             
 router.post('/forgot-password', (req, res) => {
     console.log(req.body.email);
