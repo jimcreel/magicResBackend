@@ -46,6 +46,9 @@ const userSchema = new mongoose.Schema({
 			"disney-pixie-dust-pass",
 		],
 	},
+	passReset: {
+		type: String
+	}
 });
 
 module.exports = mongoose.model("User", userSchema);

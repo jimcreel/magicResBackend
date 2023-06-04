@@ -96,6 +96,33 @@ router.get('/profile', authMiddleWare,  (req, res) => {
 
 router.put('/change-password', authMiddleWare, function (req, res) {
     // check req.user.oldPassword against the db
+    if (req.body.token) {
+        //check to see if the token matches the passReset field
+        db.User.find ({passReset: req.body.token})
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            } else {
+                bcrypt.genSalt(10, (err, salt) => {
+                    if (err) throw err
+                    bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+                        if (err) throw err
+                        req.body.newPassword = hash
+                        db.User.findByIdAndUpdate(
+                            user._id,
+                            { password: req.body.newPassword },
+                            { new: true })
+                            .then(updatedUser => {
+                                const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
+                                res.json({ token: token })
+                            })
+                            .catch(function (err) {
+                            })
+                    })
+                })
+            }
+        }
+    }
     db.User.findById(req.user.id)
         .then(user => {
             bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
@@ -113,7 +140,6 @@ router.put('/change-password', authMiddleWare, function (req, res) {
                                 { new: true })
                                 .then(user => {
                                     const token = jwt.encode({ id: user.id }, config.jwtSecret)
-                                    console.log(token)
                                     res.json({ token: token })
                                 })
                                 .catch(function (err) {
@@ -127,8 +153,56 @@ router.put('/change-password', authMiddleWare, function (req, res) {
         })
 })
 
+router.get('/password-reset/:hash'), (req, res) => {
+    db.User.find({passwordReset: req.params.hash})
+    .then(user => {
+        res.json(user)
+    })
+    .catch((err) =>{
+        res.json(err)
+    })
+}
+            
+router.post('/forgot-password', (req, res) => {
+    console.log(req.body.email);
+    db.User.findOne({ email: req.body.email })
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            } else {
 
-    
+            let random = '';
+            const characters =
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const charactersLength = characters.length;
+            for (let i = 0; i < 25; i++) {
+                random += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            console.log(random)
+            db.User.findByIdAndUpdate(
+                user._id,
+                { passReset: random },
+                { new: true }
+            )
+                .then(updatedUser => {
+                    const token = jwt.encode({ passReset: random }, config.jwtSecret);
+                    res.json({ token: token });
+                })
+                .catch(err => {
+                    console.error(err);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    })
+});
+
+
+
+
 
 
 
