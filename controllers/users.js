@@ -13,7 +13,7 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
-
+const sendEmail = require('../helpers/email.js')
 
 
 /* Require the db connection, and models
@@ -100,10 +100,11 @@ router.put('/change-password/:hash', function (req, res) {
         bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
             if (err) throw err
             req.body.newPassword = hash
-            db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword })
+            db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword }, 
+                {passReset: ''})
                 .then(user => {
-                    console.log(user)
-                    res.json(user)
+                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                    res.json({ token: token })
                 })
                 .catch(err => {
                     console.log(err)
@@ -201,6 +202,12 @@ router.post('/forgot-password', (req, res) => {
                 { new: true }
             )
                 .then(updatedUser => {
+                    const request = {
+                        type: 'forgot-password',
+                        to: updatedUser.email,
+                        url: `https//localhost:3000/users/password-reset/${random}`
+                    }
+                    sendEmail(request)
                     const token = jwt.encode({ passReset: random }, config.jwtSecret);
                     res.json({ token: token });
                 })
