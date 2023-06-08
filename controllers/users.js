@@ -67,7 +67,7 @@ router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     
     const foundUser = await db.User.findOne({ email: req.body.email })
-    if (!foundUser) {
+    if (foundUser) {
         bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
             if (err) throw err
             if (isMatch) {
