@@ -19,7 +19,12 @@ const { OAuth2Client } = require('google-auth-library');
 
 // Require the auth middleware
 
-app.use(cors())
+app.use(cors({
+  origin: '*',
+  methods: 'GET, POST, PUT, DELETE',
+  allowedHeaders: 'Content-Type, Authorization'
+}));
+
 // refresh the browser when nodemon restarts
 app.use('/api', (req, res, next) => {
   
@@ -74,9 +79,14 @@ app.use('/api/users', require('./controllers/users'))
 app.get('/api/availability/:resort/:pass', async (req, res) => {
     let resortNameUrl = req.params.resort == 'DLR' ? 'disneyland' : 'disneyworld';
     let pass = req.params.pass
-    const headers = {
-      'Content-Type': 'application/json', // Specify the content type of the request
-    };
+    let headers = {
+      'authority': `${resortNameUrl}.disney.go.com`,
+      'accept': 'application/json',
+      'x-requested-with': 'XMLHttpRequest',
+      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
+      'content-type': 'application/json',
+      'origin': `https://${resortNameUrl}.disney.go.com`
+    }
     let url = `https://${resortNameUrl}.disney.go.com/passes/blockout-dates/api/get-availability/?product-types=${pass}&destinationId=DLR&numMonths=14`;
     try {
       const response = await axios.get(url, { headers });
