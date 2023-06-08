@@ -15,7 +15,7 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 
 /* Require the db connection, and models
@@ -84,7 +84,7 @@ router.post('/login', async (req, res) => {
 })
 
 router.post('/google' , async (req, res) => {
-    
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     console.log(req.body)
     client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID })
         .then(response => {
