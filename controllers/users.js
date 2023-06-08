@@ -67,20 +67,23 @@ router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     
     const foundUser = await db.User.findOne({ email: req.body.email })
-    bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
-        if (err) throw err
-        if (isMatch) {
-            const payload = { id: foundUser.id }
-            const token = jwt.encode(payload, config.jwtSecret)
-            res.json({
-                token: token,
-                email: foundUser.email
-            })
-        } else {
-            res.json({ data: 'Incorrect email/password' })
-        }
-    })
-
+    if (!foundUser) {
+        bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
+            if (err) throw err
+            if (isMatch) {
+                const payload = { id: foundUser.id }
+                const token = jwt.encode(payload, config.jwtSecret)
+                res.json({
+                    token: token,
+                    email: foundUser.email
+                })
+            } else {
+                res.json({ data: 'Incorrect email/password' })
+            }
+        })
+    } else {
+        res.json({ data: 'Incorrect email/password' })
+    }
 })
 
 router.post('/google' , async (req, res) => {
