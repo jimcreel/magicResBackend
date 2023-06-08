@@ -2,10 +2,10 @@
 
 require('dotenv').config()
 
-const path = require('path');
+
 const express = require('express');
 const session = require('express-session');
-const ensureLoggedIn = require('./config/ensureLoggedIn');
+
 const cors = require('cors');
 const db = require('./models');
 const requestsCtrl = require('./controllers/requests')
@@ -14,6 +14,8 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const { default: axios } = require('axios');
 const app = express();
 const jwt = require('jwt-simple');
+const { OAuth2Client } = require('google-auth-library');
+
 
 // Require the auth middleware
 

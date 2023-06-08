@@ -14,6 +14,8 @@ const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 /* Require the db connection, and models
@@ -21,6 +23,8 @@ const sendEmail = require('../helpers/email.js')
 const db = require('../models')
 
 // Require the auth middleware
+
+
 const authMiddleWare = (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
@@ -61,6 +65,7 @@ router.post('/signup', (req, res) => {
 
 router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
+    
     const foundUser = await db.User.findOne({ email: req.body.email })
     bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
         if (err) throw err
@@ -77,6 +82,48 @@ router.post('/login', async (req, res) => {
     })
 
 })
+
+router.post('/google' , async (req, res) => {
+    const { tokenId } = req.body;
+    client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID })
+        .then(response => {
+            const { email_verified, name, email } = response.payload;   
+            if (email_verified) {
+                db.User.findOne({ email }).exec((err, user) => {
+                    if (err) {
+                        return res.status(400).json({
+                            error: 'Something went wrong...'
+                        })
+                    } else {
+                        if (user) {
+                            const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                            res.json({ token: token })
+                        } else {
+                            let password = email + process.env.GOOGLE_CLIENT_SECRET
+                            bcrypt.genSalt(10, (err, salt) => {
+                                if (err) throw err
+                                bcrypt.hash(password, salt, (err, hash) => {
+                                    if (err) throw err
+                                    password = hash
+                                })
+                            })
+                            let newUser = new db.User({ name, email, password })
+                            newUser.save((err, data) => {
+                                if (err) {
+                                    return res.status(400).json({
+                                        error: 'Something went wrong...'
+                                    })
+                                }
+                                const token = jwt.encode({ id: data.id }, config.jwtSecret)
+                                res.json({ token: token })
+                            })
+                        }
+                    }
+                })
+            }
+        })
+})
+
 
 
 // Show Route: shows the user details and link to edit/delete
