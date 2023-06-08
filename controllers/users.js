@@ -169,7 +169,6 @@ router.put('/change-password', authMiddleWare, function (req, res) {
     db.User.findById(req.user.id)
         .then(user => {
             bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
-                console.log(isMatch? 'match' : 'no match')
                 if (err) throw err
                 if (isMatch) {
                     bcrypt.genSalt(10, (err, salt) => {
@@ -228,7 +227,6 @@ router.put('/password-reset/:hash'), (req, res) => {
 
             
 router.post('/forgot-password', (req, res) => {
-    console.log(req.body.email);
     db.User.findOne({ email: req.body.email })
         .then(user => {
             if (!user) {
@@ -242,7 +240,7 @@ router.post('/forgot-password', (req, res) => {
             for (let i = 0; i < 25; i++) {
                 random += characters.charAt(Math.floor(Math.random() * charactersLength));
             }
-            console.log(random)
+            // console.log(random)
             db.User.findByIdAndUpdate(
                 user._id,
                 { passReset: random },
