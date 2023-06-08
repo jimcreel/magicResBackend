@@ -13,7 +13,9 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
-
+const sendEmail = require('../helpers/email.js')
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 /* Require the db connection, and models
@@ -21,6 +23,8 @@ const jwt = require('jwt-simple');
 const db = require('../models')
 
 // Require the auth middleware
+
+
 const authMiddleWare = (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
@@ -61,6 +65,7 @@ router.post('/signup', (req, res) => {
 
 router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
+    
     const foundUser = await db.User.findOne({ email: req.body.email })
     bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
         if (err) throw err
@@ -78,6 +83,48 @@ router.post('/login', async (req, res) => {
 
 })
 
+router.post('/google' , async (req, res) => {
+    const { tokenId } = req.body;
+    client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID })
+        .then(response => {
+            const { email_verified, name, email } = response.payload;   
+            if (email_verified) {
+                db.User.findOne({ email }).exec((err, user) => {
+                    if (err) {
+                        return res.status(400).json({
+                            error: 'Something went wrong...'
+                        })
+                    } else {
+                        if (user) {
+                            const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                            res.json({ token: token })
+                        } else {
+                            let password = email + process.env.GOOGLE_CLIENT_SECRET
+                            bcrypt.genSalt(10, (err, salt) => {
+                                if (err) throw err
+                                bcrypt.hash(password, salt, (err, hash) => {
+                                    if (err) throw err
+                                    password = hash
+                                })
+                            })
+                            let newUser = new db.User({ name, email, password })
+                            newUser.save((err, data) => {
+                                if (err) {
+                                    return res.status(400).json({
+                                        error: 'Something went wrong...'
+                                    })
+                                }
+                                const token = jwt.encode({ id: data.id }, config.jwtSecret)
+                                res.json({ token: token })
+                            })
+                        }
+                    }
+                })
+            }
+        })
+})
+
+
 
 // Show Route: shows the user details and link to edit/delete
 router.get('/profile', authMiddleWare,  (req, res) => {
@@ -93,9 +140,32 @@ router.get('/profile', authMiddleWare,  (req, res) => {
 // UPDATE Route: updates the user details
 // 
 
+router.put('/change-password/:hash', function (req, res) {
+    const hashUrl = req.params.hash; // Access the `hash` parameter
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) throw err
+        bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+            if (err) throw err
+            req.body.newPassword = hash
+            db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword }, 
+                {passReset: ''})
+                .then(user => {
+                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                    res.json({ token: token })
+                })
+                .catch(err => {
+                    console.log(err)
+                    res.json({ data: 'Could not update the user' })
+                })
+        })
+    })
+})
+
+
 
 router.put('/change-password', authMiddleWare, function (req, res) {
     // check req.user.oldPassword against the db
+    
     db.User.findById(req.user.id)
         .then(user => {
             bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
@@ -113,7 +183,6 @@ router.put('/change-password', authMiddleWare, function (req, res) {
                                 { new: true })
                                 .then(user => {
                                     const token = jwt.encode({ id: user.id }, config.jwtSecret)
-                                    console.log(token)
                                     res.json({ token: token })
                                 })
                                 .catch(function (err) {
@@ -125,10 +194,85 @@ router.put('/change-password', authMiddleWare, function (req, res) {
                 }
             })
         })
-})
+    }
+)
 
 
-    
+
+router.put('/password-reset/:hash'), (req, res) => {
+    db.User.find({passReset: hash})
+    .then(user => {
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
+                if (err) throw err
+                req.body.newPassword = hash
+                db.User.findByIdAndUpdate(
+                    user._id,
+                    { password: req.body.newPassword },
+                    { new: true })
+                    .then(updatedUser => {
+                        const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
+                        res.json({ token: token })
+                    })
+                    .catch(function (err) {
+                    })
+            })
+    })
+    })
+    .catch((err) =>{
+        res.json(err)
+    })
+}
+
+
+
+            
+router.post('/forgot-password', (req, res) => {
+    console.log(req.body.email);
+    db.User.findOne({ email: req.body.email })
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            } else {
+
+            let random = '';
+            const characters =
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const charactersLength = characters.length;
+            for (let i = 0; i < 25; i++) {
+                random += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            console.log(random)
+            db.User.findByIdAndUpdate(
+                user._id,
+                { passReset: random },
+                { new: true }
+            )
+                .then(updatedUser => {
+                    const request = {
+                        type: 'forgot-password',
+                        to: updatedUser.email,
+                        url: `https//localhost:3000/users/password-reset/${random}`
+                    }
+                    sendEmail(request)
+                    const token = jwt.encode({ passReset: random }, config.jwtSecret);
+                    res.json({ token: token });
+                })
+                .catch(err => {
+                    console.error(err);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    })
+});
+
+
+
+
 
 
 
