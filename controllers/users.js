@@ -84,7 +84,8 @@ router.post('/login', async (req, res) => {
 })
 
 router.post('/google' , async (req, res) => {
-    const { tokenId } = req.body;
+    
+    console.log(req.body)
     client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID })
         .then(response => {
             const { email_verified, name, email } = response.payload;   
