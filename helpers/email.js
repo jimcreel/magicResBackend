@@ -20,10 +20,10 @@ const messages = [
 ]
 
 function buildBody (request){
-    if (request.type = 'forgot-password'){
+    if (request.type === 'forgot-password'){
         const msg = messages.find(m => m.type === request.type)
         return msg.body.replace('http://localhost:3000/', request.url)
-    } else if (request.type = 'notification'){
+    } else if (request.type === 'notification'){
         const msg = messages.find(m => m.type === request.type)
         return msg.body.replace('http://localhost:3000/', request.url).replace('{resort}', request.resort).replace('{date}', request.date).replace('{park}', request.park)
     }
@@ -43,13 +43,12 @@ async function sendEmail(request) {
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
+        tls: {
+            rejectUnauthorized: false
+        },
         auth: {
-            type: "OAuth2",
             user: process.env.EMAIL,
-            clientId: process.env.CLIENT_ID,
-            clientSecret: process.env.CLIENT_SECRET,
-            refreshToken: process.env.REFRESH_TOKEN,
-            accessToken: process.env.ACCESS_TOKEN,
+            pass: process.env.PASSWORD,
             
         },
     });
