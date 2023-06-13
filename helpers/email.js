@@ -47,8 +47,8 @@ async function sendEmail(request) {
             rejectUnauthorized: false
         },
         auth: {
-            user: process.env.EMAIL,
-            pass: process.env.PASSWORD,
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASS,
             
         },
     });
