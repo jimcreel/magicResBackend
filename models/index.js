@@ -1,18 +1,20 @@
+const { Client } = require("pg");
 
-require('dotenv').config()
-const mongoose = require('mongoose');
-const mongodbUri = process.env.MONGODBURI;
+const client = new Client(process.env.DATABASE_URL);
 
-// Create an immediately invoked async function.
-// It will wait for Mongoose to connect to MongoDB Atlas
-(async function () {
-    await mongoose.connect(mongodbUri);
-    console.log('Mongoose is connected');
-})().catch(err => console.log('MongoDB connection error:\n' + err))
+const executeQuery = async (query) => {
+  await client.connect();
+  try {
+    const results = await client.query(query);
+    return results;
+  } catch (err) {
+    console.error("error executing query:", err);
+    throw err;
+  } finally {
+    client.end();
+  }
+};
 
-// Export models and API functions to `server.js`
 module.exports = {
-    
-    User: require('./user'),
-    Request: require('./request'),
-}
+  executeQuery,
+};

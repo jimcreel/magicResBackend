@@ -15,6 +15,7 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
+const {executeQuery} = require('../models/index.js')
 
 
 
@@ -50,8 +51,13 @@ router.post('/signup', (req, res) => {
         bcrypt.hash(req.body.password, salt, (err, hash) => {
             if (err) throw err
             req.body.password = hash
-            db.User.create(req.body)
+            let query = 
+            `   INSERT INTO USERS (firstname, lastname, pass, email, phone, password, passreset)
+                VALUES ('${req.body.firstname}', '${req.body.lastname}', '${req.body.pass}',
+                '${req.body.email}', '${req.body.phone}', '${req.body.password}', '${req.body.passreset}')`
+            executeQuery(query)
                 .then(user => {
+                    console.log(user)
                     const token = jwt.encode({ id: user.id }, config.jwtSecret)
                     res.json({ token: token })
                 })
@@ -66,7 +72,8 @@ router.post('/signup', (req, res) => {
 router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     
-    const foundUser = await db.User.findOne({ email: req.body.email })
+    const foundUser = await executeQuery(`SELECT * FROM USERS WHERE email = '${req.body.email}'`)
+    console.log(foundUser)
     if (foundUser) {
         bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
             if (err) throw err
@@ -133,7 +140,7 @@ router.post('/google' , async (req, res) => {
 // Show Route: shows the user details and link to edit/delete
 router.get('/profile', authMiddleWare,  (req, res) => {
    
-	db.User.findById(req.user.id)
+	executeQuery(`SELECT * FROM USERS WHERE ID = ${req.user.id}`)
     .then(user => {
         
         res.json(user)
