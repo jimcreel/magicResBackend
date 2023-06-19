@@ -16,6 +16,9 @@ const app = express();
 const jwt = require('jwt-simple');
 const { OAuth2Client } = require('google-auth-library');
 
+const sendNotifications = require('./helpers/notifications').sendNotifications;
+
+
 
 // Require the auth middleware
 
@@ -41,8 +44,14 @@ app.use('/api', (req, res, next) => {
 
 const PORT = process.env.PORT
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log('Server listening on port 3000');
+  // call sendNotifications on a 10 minute timer
+  sendNotifications();
+  setInterval(async () => {
+    sendNotifications()
+  }
+  , 600000);
 });
 
 

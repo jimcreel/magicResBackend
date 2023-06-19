@@ -28,6 +28,11 @@ const requestSchema = new mongoose.Schema ({
         required: true,
         default: false
     },
+    count: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,

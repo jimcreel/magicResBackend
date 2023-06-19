@@ -63,14 +63,15 @@ router.get('/:userId',  (req, res) => {
 });
 
 
-// Create Route: POST localhost:3000/requests/
+
 // Create Route: POST localhost:3000/requests/
 router.post('/create', authMiddleWare, (req, res) => {
     
     
     const request = {
         ...req.body,
-        userId: req.user.id
+        userId: req.user.id,
+        count: 0
     }
     
     db.User.findByIdAndUpdate(
