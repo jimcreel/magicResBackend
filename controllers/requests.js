@@ -59,7 +59,8 @@ router.get('/:userId',  (req, res) => {
 // Create Route: POST localhost:3000/requests/
 router.post('/create', authMiddleWare, (req, res) => {
     
-    
+    const requestId = getRequestId(req.body)
+    console.log(requestId);
     createRequest(req.body, req.user.id)
         .then(result => res.json(result))
         .catch(err => console.log(err))

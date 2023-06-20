@@ -62,8 +62,26 @@ const deleteRequest = async (requestId) => {
     }
 };
 
+const getRequestId = async (request) => {
+    const client = new Client(process.env.DATABASE_URL);
+    const query = 
+        ` SELECT id FROM REQUESTS
+        WHERE resort = '${request.resort}', park = '${request.park}', date = '${request.date}';`
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        console.log(result)
+        
+    } catch (err) {
+        console.error('error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 
 
 module.exports = {
-    createRequest, deleteRequest
+    createRequest, deleteRequest, getRequestId
 }
