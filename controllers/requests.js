@@ -12,7 +12,8 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
-const { createRequest, deleteRequest } = require('../models/request.js');
+const { createRequest, deleteRequest, getRequestId } = require('../models/request.js');
+const { createUserRequest } = require('../models/user.js');
 
 const authMiddleWare = (req, res, next) => {
     const token = req.headers.authorization;
@@ -60,10 +61,26 @@ router.get('/:userId',  (req, res) => {
 router.post('/create', authMiddleWare, (req, res) => {
     
     const requestId = getRequestId(req.body)
-    console.log(requestId);
-    createRequest(req.body, req.user.id)
-        .then(result => res.json(result))
-        .catch(err => console.log(err))
+    .then(requestId => {
+        if (requestId.rows.length === 0){
+            createRequest(req.body)
+            .then(result => 
+                createUserRequest(result.rows[0].id, req.user.id)
+                .then(result => res.json(result))
+                .catch(err => console.log(err))
+            )
+            .catch(err => console.log(err))
+
+        } else {
+            createUserRequest(requestId.rows[0].id, req.user.id)
+            .then(result => res.json(result))
+            .catch(err => console.log(err))
+
+        }
+    })
+    .catch(err => console.log(err))
+
+
         
 });
 

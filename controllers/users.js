@@ -70,6 +70,7 @@ router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     
     const userData = await getUser(req.body.email)
+
     let foundUser = userData.rows[0]
     console.log(foundUser)
     if (foundUser) {
@@ -98,7 +99,7 @@ router.post('/google' , async (req, res) => {
         .then(response => {
             const { email_verified, name, email } = response.payload;   
             if (email_verified) {
-                db.User.findOne({ email }).exec((err, user) => {
+                getUser({email}).exec((err, user) => {
                     if (err) {
                         return res.status(400).json({
                             error: 'Something went wrong...'
@@ -116,13 +117,7 @@ router.post('/google' , async (req, res) => {
                                     password = hash
                                 })
                             })
-                            let newUser = new db.User({ name, email, password })
-                            newUser.save((err, data) => {
-                                if (err) {
-                                    return res.status(400).json({
-                                        error: 'Something went wrong...'
-                                    })
-                                }
+                            let newUser = createUser({name, email, password}).then(data => {
                                 const token = jwt.encode({ id: data.id }, config.jwtSecret)
                                 res.json({ token: token })
                             })
@@ -160,6 +155,7 @@ router.put('/change-password/:hash', function (req, res) {
             req.body.newPassword = hash
             db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword }, 
                 {passReset: ''})
+                editUser(req.body)
                 .then(user => {
                     const token = jwt.encode({ id: user.id }, config.jwtSecret)
                     res.json({ token: token })
@@ -177,7 +173,7 @@ router.put('/change-password/:hash', function (req, res) {
 router.put('/change-password', authMiddleWare, function (req, res) {
     // check req.user.oldPassword against the db
     
-    db.User.findById(req.user.id)
+    getUserById(req.user.id)
         .then(user => {
             bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
                 if (err) throw err

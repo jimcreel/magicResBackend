@@ -2,19 +2,18 @@ const { Client } = require("pg");
 
 // create a new request and also a USER_REQUESTS entry
 
-const createRequest = async (request, userId) => {
-    let requestId
+const createRequest = async (request) => {
     const client = new Client(process.env.DATABASE_URL);
-    let query =
-            `   INSERT INTO REQUEST (resort, park, date)
-                VALUES ('${request.resort}', '${request.park}', '${request.date}')
-                RETURNING id;`
+    
+    const query = {
+        text: 'INSERT INTO REQUEST (resort, park, date) VALUES ($1, $2, $3) RETURNING id;',
+        values: [request.resort, request.park, request.date]
+    }
+
     await client.connect();
     try {
         const results = await client.query(query);
-        console.log(results.rows[0].id)
-        requestId = results.rows[0].id;
-        
+        return results;
     }
     catch (err) {
         console.error("error executing query:", err);
@@ -23,24 +22,6 @@ const createRequest = async (request, userId) => {
     finally {
         await client.end();
     }
-    const client2 = new Client(process.env.DATABASE_URL);
-    console.log(request)
-    query = 
-            `   INSERT INTO USERS_REQUEST (user_id, request_id, notification_count, method)
-                VALUES ('${userId}', '${requestId}', 0, 'email');`
-    await client2.connect();
-    try {
-        const results = await client2.query(query);
-        return results;
-    }
-    catch (err) {
-        console.error("error executing query:", err);
-        throw err;
-    }
-    finally {
-        await client2.end();
-    }
-
 }
 
 const deleteRequest = async (requestId) => {
@@ -64,14 +45,14 @@ const deleteRequest = async (requestId) => {
 
 const getRequestId = async (request) => {
     const client = new Client(process.env.DATABASE_URL);
-    const query = 
-        ` SELECT id FROM REQUESTS
-        WHERE resort = '${request.resort}', park = '${request.park}', date = '${request.date}';`
+    const query = {
+        text: ' SELECT id FROM REQUEST WHERE resort = $1 AND park = $2 AND date = $3;',
+        values: [request.resort, request.park, request.date]
+    }   
     await client.connect();
     try {
         const result = await client.query(query);
-        console.log(result)
-        
+        return result;
     } catch (err) {
         console.error('error executing query:', err);
         throw err;

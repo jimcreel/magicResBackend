@@ -6,13 +6,15 @@ const createUser = async (user) => {
 	console.log('creating user')
     const client = new Client(process.env.DATABASE_URL);
     let query = 
-            `   INSERT INTO USERS (email, password)
-                VALUES ('${user.email}', '${user.password}')
-				RETURNING id;`
+        {
+            test: `INSERT INTO USERS (email, password)
+                VALUES ($1, $2)
+                RETURNING id;`,
+            values: [user.email, user.password]
+        }
     await client.connect();
     try {
         const results = await client.query(query);
-		console.log(results)
         return results.rows[0].id;
     } catch (err) {
         console.error("error executing query:", err);
@@ -22,11 +24,39 @@ const createUser = async (user) => {
     }
     };
 
+
+
+const createUserRequest = async (requestId, userId) => {
+    const client = new Client(process.env.DATABASE_URL);
+    let query =
+      {
+       text: 'INSERT INTO USERS_REQUEST (user_id, request_id, notification_count, method) VALUES ($1, $2, $3, $4) RETURNING id;',
+       values: [userId, requestId, 0, 'email']
+
+      }
+    
+    await client.connect();
+    try {
+      const results = await client.query(query);
+      return results;
+    } catch (err) {
+      console.error("error executing query:", err);
+      throw err;
+    } finally {
+      await client.end();
+    }
+  }
+  
+
 const getUser = async (user) => {
+    console.log(user)
     const client = new Client(process.env.DATABASE_URL);
     let query = 
-            `   SELECT * FROM USERS
-                WHERE email = '${user}';`
+    {
+        text: ' SELECT * FROM USERS WHERE email = $1;',
+        values: [user]
+    }
+            
     await client.connect();
     try {
         const results = await client.query(query);
@@ -43,8 +73,11 @@ const getUser = async (user) => {
 const getUserById = async (id) => {
     const client = new Client(process.env.DATABASE_URL);
     let query =
-            `   SELECT * FROM USERS
-                WHERE id = '${id}';`
+    {
+        text: `SELECT * FROM USERS WHERE id = $1;`,
+        values: [id]
+    }
+
     await client.connect();
     try {
         const results = await client.query(query);
@@ -61,12 +94,15 @@ const getUserRequests = async (id) => {
     console.log('getting user requests');
     const client = new Client(process.env.DATABASE_URL);
     let query =
-        `SELECT * FROM REQUEST
-        WHERE id IN (SELECT request_id FROM USERS_REQUEST WHERE user_id = '${id}');`;
+    {
+        text: `SELECT * FROM REQUEST
+        WHERE id IN (SELECT request_id FROM USERS_REQUEST WHERE user_id = $1);`,
+        values: [id]
+
+    }
     await client.connect();
     try {
         const results = await client.query(query);
-        console.log(results.rows);
         return results;
     } catch (err) {
         console.error("error executing query:", err);
@@ -131,5 +167,5 @@ const editUser = async (user, id) => {
   
 
 module.exports = {
-  createUser, getUser, getUserById, getUserRequests, editUser
+  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest
 };
