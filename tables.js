@@ -40,7 +40,7 @@ const client = new Client(process.env.DATABASE_URL);
     // );
 
     const results = await client.query(
-        `SELECT * FROM USERS;`
+        `SELECT * FROM users;`
     );
     // const results = await client.query(
     //     `ALTER TABLE USERS
@@ -60,6 +60,15 @@ const client = new Client(process.env.DATABASE_URL);
     //     passreset VARCHAR(150)
     // );`
     // )
+    // const results = await client.query(
+    //   `ALTER TABLE USERS
+    //   RENAME COLUMN pass TO defaultpass;
+  
+    // `  ALTER TABLE USERS
+      // RENAME COLUMN resort TO defaultresort;
+  //  `
+    // );
+  
       
 
     console.log(results.rows);
