@@ -15,7 +15,7 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
-const {executeQuery} = require('../models/index.js')
+const {createUser, getUser, getUserById, getUserRequests} = require('../models/index.js')
 
 
 
@@ -51,11 +51,8 @@ router.post('/signup', (req, res) => {
         bcrypt.hash(req.body.password, salt, (err, hash) => {
             if (err) throw err
             req.body.password = hash
-            let query = 
-            `   INSERT INTO USERS (firstname, lastname, pass, email, phone, password, passreset)
-                VALUES ('${req.body.firstname}', '${req.body.lastname}', '${req.body.pass}',
-                '${req.body.email}', '${req.body.phone}', '${req.body.password}', '${req.body.passreset}')`
-            executeQuery(query)
+            
+            createUser(req.body)
                 .then(user => {
                     console.log(user)
                     const token = jwt.encode({ id: user.id }, config.jwtSecret)
@@ -72,7 +69,8 @@ router.post('/signup', (req, res) => {
 router.post('/login', async (req, res) => {
     // attempt to find the user by their email in the database
     
-    const foundUser = await executeQuery(`SELECT * FROM USERS WHERE email = '${req.body.email}'`)
+    const userData = await getUser(req.body.email)
+    let foundUser = userData.rows[0]
     console.log(foundUser)
     if (foundUser) {
         bcrypt.compare (req.body.password, foundUser.password, (err, isMatch) => {
@@ -140,9 +138,12 @@ router.post('/google' , async (req, res) => {
 // Show Route: shows the user details and link to edit/delete
 router.get('/profile', authMiddleWare,  (req, res) => {
    
-	executeQuery(`SELECT * FROM USERS WHERE ID = ${req.user.id}`)
+	getUserById(req.user.id)
     .then(user => {
-        
+        getUserRequests(req.user.id)
+        .then(requests => {
+            res.json({user: user.rows[0], requests: requests.rows})
+        })
         res.json(user)
     })
         });
