@@ -1,6 +1,23 @@
 const { Client } = require("pg");
+const env = require("dotenv").config();
 
 // create a new request and also a USER_REQUESTS entry
+
+const getAllRequests = async () => {
+    const client = new Client(process.env.DATABASE_URL);
+    const query = 'SELECT * FROM REQUEST;';
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        return result;
+    } catch (err) {
+        console.error('error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+};
+
 
 const createRequest = async (request) => {
     const client = new Client(process.env.DATABASE_URL);
@@ -64,5 +81,5 @@ const getRequestId = async (request) => {
 
 
 module.exports = {
-    createRequest, deleteRequest, getRequestId
+    createRequest, deleteRequest, getRequestId, getAllRequests
 }

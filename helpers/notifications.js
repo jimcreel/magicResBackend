@@ -1,7 +1,8 @@
 // const db = require('../models');
-// const axios = require('axios');
+const axios = require('axios');
 // const user = require('../models/user');
-
+const { getAllRequests } = require('../models/request');
+const env = require("dotenv").config();
 // class Request {
 //     constructor(pass, resort, park, date, available, _id) {
 //       this.pass = pass;
@@ -91,40 +92,39 @@
 //     let wdw = await axios.get('https://disneyworld.disney.go.com/passes/blockout-dates/api/get-availability/?product-types=disney-incredi-pass,disney-sorcerer-pass,disney-pirate-pass,disney-pixie-dust-pass&destinationId=WDW&numMonths=14')
 //     return {DLR: dlr.data, WDW: wdw.data}
 // }
-// async function getNotificationList() {
-//     try {
-//         const requestList = [];
-//         const users = await db.User.find({ requests: { $exists: true, $not: { $size: 0 } } }).exec();
-        
-//         users.forEach(user => {
-//             let requests = user.requests;
+async function getNotificationList() {
+    try {
+        const requestList = await getAllRequests();
+        console.log(requestList)
+        requestList.forEach(user => {
+            let requests = user.requests;
 
-//             requests.forEach(request => {
-//                 const existingRequest = requestList.find(existingRequest =>
-//                     existingRequest.park === request.park &&
-//                     existingRequest.date === request.date &&
-//                     existingRequest.pass === request.pass &&
-//                     existingRequest.resort === request.resort
-//                 );
-//                 let today = new Date().toLocaleDateString()
-//                 let reqDateString = request.date.replace(/-/g, '/')
-//                 let requestDate = new Date(reqDateString).toLocaleDateString()
+            requests.forEach(request => {
+                const existingRequest = requestList.find(existingRequest =>
+                    existingRequest.park === request.park &&
+                    existingRequest.date === request.date &&
+                    existingRequest.pass === request.pass &&
+                    existingRequest.resort === request.resort
+                );
+                let today = new Date().toLocaleDateString()
+                let reqDateString = request.date.replace(/-/g, '/')
+                let requestDate = new Date(reqDateString).toLocaleDateString()
                 
-//                 if (!existingRequest && requestDate >= today) {
-//                     requestList.push(new Request(request.pass, request.resort, request.park, request.date, request.available, [request._id]));
-//                 } else if (existingRequest) {
-//                     existingRequest._id.push(request._id);
-//                 }
-//             });
-//         });
+                if (!existingRequest && requestDate >= today) {
+                    requestList.push(new Request(request.pass, request.resort, request.park, request.date, request.available, [request._id]));
+                } else if (existingRequest) {
+                    existingRequest._id.push(request._id);
+                }
+            });
+        });
         
-//         return requestList;
-//     } catch (error) {
-//         console.error(error);
-//         // Handle the error
-//         throw error;
-//     }
-// }
+        return requestList;
+    } catch (error) {
+        console.error(error);
+        // Handle the error
+        throw error;
+    }
+}
 
 
 
@@ -182,8 +182,9 @@
     
 //   }
   
+  getNotificationList();
 
 
-// module.exports = {
-//     sendNotifications
-// }
+module.exports = {
+   getNotificationList
+}

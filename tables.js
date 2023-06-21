@@ -39,10 +39,10 @@ const client = new Client(process.env.DATABASE_URL);
     //     VALUES ('Jim', 'Creel', 'inspire-key-pass', 'jim.creel@gmail.com', '6822020495');`
     // );
 
-    const results = await client.query(
-        `DELETE FROM users
-        WHERE email='heather.creel85@gmail.com';`
-    );
+    // const results = await client.query(
+    //     ` DELETE FROM USERS
+    //     WHERE email='heather.creel85@gmail.com';`
+    // );
     // const results = await client.query(
     //     `ALTER TABLE USERS
     //     ADD COLUMN password VARCHAR(150),
