@@ -1,7 +1,7 @@
 const db = require('../models');
 const axios = require('axios');
 const user = require('../models/user');
-const { getAllRequests, updateAvailability } = require('../models/request');
+const { getAllRequests, updateAvailability, getRequestUsers } = require('../models/request');
 const env = require("dotenv").config();
 
 class Request {
@@ -15,77 +15,32 @@ class Request {
     }
   }
 
-class Notification {
-    constructor(pass, resort, park, date, email){
+  class Notification {
+    constructor(pass, resort, park, date, emails, phones){
         this.pass = pass;
         this.resort = resort;
         this.park = park;
         this.date = date;
-        this.email = email;
+        this.emails = emails || [];
+        this.phones = phones || [];
     }
 }
-  
+
+let notificationList = []; 
 
 async function sendNotifications(){
     const requestList = await getNotificationList();
     const availabilities = await getAvailability();
     // console.log(availabilities)
     const matchList = await matchRequests(requestList, availabilities);
+    console.log('this is the match list', matchList);
     const notificationList = await buildNotifications(matchList);
     console.log('this is the notification list', notificationList);
 
 
 }
 
-async function buildNotifications(notificationList) {
-    console.log(notificationList)
-    let resultList = [];
-    let userName = ''
-    let userEmail = ''
-    let userPass = ''
-    let userResort = ''
-    let userPark = ''
-    let userDate = ''
-    for (const requestId of notificationList) {
-      try {
-        // Find the user with the matching request ID
-        const user = await db.User.findOne({ 'requests._id': requestId });
-  
-        if (user) {
-          // Send the notification to the user (replace this with your notification logic)
-          console.log('Sending notification to user:', user);
-            userName = user.name
-            userEmail = user.email
-            user.requests.forEach(request => {
-                console.log(request._id, requestId)
-                if (request._id == requestId) {
-                    userPass = request.pass
-                    userResort = request.resort
-                    userPark = request.park
-                    userDate = request.date
-                    console.log(userPass, userResort, userPark, userDate, userEmail)
-                }
-            })
 
-
-            resultList.push(new Notification(userPass, userResort, userPark, userDate, userEmail))
-            // console.log(resultList)
-                      // Update the request status or perform any other necessary operations
-            await db.User.findOneAndUpdate(
-                { 'requests._id': requestId },
-                // increment the request count
-                { $inc: { 'requests.$.count': 1 } },
-                { new: true }
-            );
-        } else {
-          console.log('User not found for request ID:', requestId);
-        }
-      } catch (error) {
-        console.error('Error sending notification:', error);
-      }
-    }
-    return resultList;
-  }
   
 
 async function getAvailability() {
@@ -93,6 +48,7 @@ async function getAvailability() {
     let wdw = await axios.get('https://disneyworld.disney.go.com/passes/blockout-dates/api/get-availability/?product-types=disney-incredi-pass,disney-sorcerer-pass,disney-pirate-pass,disney-pixie-dust-pass&destinationId=WDW&numMonths=14')
     return {DLR: dlr.data, WDW: wdw.data}
 }
+
 async function getNotificationList() {
     try {
         const requestList = await getAllRequests();
@@ -129,7 +85,7 @@ async function matchRequests(requests, availabilities) {
       const matches = passAvailDates.filter(avail => avail.date === date);
   
       if (request.park === 'ANY') {
-        matches.forEach(match => {
+        matches.find(match => {
           if (match.slots.available === true) {
             const existingTrue = newTrueList.find((request) => request.id === match.id)
             if (!existingTrue){
@@ -143,17 +99,16 @@ async function matchRequests(requests, availabilities) {
             // console.log(match.slots[0].available, available);
             if (match.slots[0].available !== available) {
               // add request to update list
-              match.slots[0].available === true ? newTrueList.push(...request.id) : newFalseList.push(...request.id);
+              match.slots[0].available === true ? newTrueList.push(new Notification(pass, resort, park, date, request.emails, request.phones)) : newFalseList.push(request.id);
             }
           }
         });
       }
     }
-    console.log(newTrueList)
-    console.log(newFalseList)
+    console.log('new true list', newTrueList)
+    console.log('new false list', newFalseList)
     
-    updateAvailability();
-    
+
     // await db.User.updateMany(
     //     { requests: { $elemMatch: { _id: { $in: newTrueList } } } },
     //     { $set: { 'requests.$.available': true } }
@@ -165,9 +120,9 @@ async function matchRequests(requests, availabilities) {
 
     return newTrueList
     
-  }
+}
   
-  
+
 
 
 module.exports = {

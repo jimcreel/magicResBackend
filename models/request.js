@@ -59,6 +59,23 @@ const deleteRequest = async (requestId) => {
         await client.end();
     }
 };
+const getRequestById = async (requestId) => {
+    const client = new Client(process.env.DATABASE_URL);
+    const query = {
+        text: 'SELECT * FROM REQUEST WHERE id = $1;',
+        values: [requestId]
+    }
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        return result;
+    } catch (err) {
+        console.error('error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
 
 const getRequestId = async (request) => {
     const client = new Client(process.env.DATABASE_URL);
@@ -78,23 +95,42 @@ const getRequestId = async (request) => {
     }
 }
 
-const updateAvailability = async (requests) =>
-const client = new Client(process.env.DATABASE_URL);
-// toggle each request's availability to be true if false or false if true
+const updateAvailability = async (requests) =>{
+    const client = new Client(process.env.DATABASE_URL);
+    // toggle each request's availability to be true if false or false if true
 
-await client.connect();
-try {
-    const result = await client.query(query);
-    return result;
-} catch (err) {
-    console.error('error executing query:', err);
-    throw err;
-} finally {
-    await client.end();
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        return result;
+    } catch (err) {
+        console.error('error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
 }
+
+getRequestUsers = async (requestId) => {
+    const client = new Client(process.env.DATABASE_URL);
+    const query = {
+        text: 'SELECT * FROM USERS_REQUEST WHERE request_id = $1;',
+        values: [requestId]
+    }
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        return result;
+    } catch (err) {
+        console.error('error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
 }
+
 
 
 module.exports = {
-    createRequest, deleteRequest, getRequestId, getAllRequests
+    createRequest, deleteRequest, getRequestId, getAllRequests, updateAvailability, getRequestById, getRequestUsers
 }
