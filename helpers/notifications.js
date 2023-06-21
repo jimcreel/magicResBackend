@@ -16,7 +16,8 @@ class Request {
   }
 
   class Notification {
-    constructor(pass, resort, park, date, emails, phones){
+    constructor(id, pass, resort, park, date, emails, phones){
+        this.id = id;
         this.pass = pass;
         this.resort = resort;
         this.park = park;
@@ -26,7 +27,7 @@ class Request {
     }
 }
 
-let notificationList = []; 
+
 
 async function sendNotifications(){
     const requestList = await getNotificationList();
@@ -39,6 +40,34 @@ async function sendNotifications(){
 
 
 }
+
+async function buildNotifications(matchList) {
+    const updatedMatchList = [];
+  
+    for (const match of matchList) {
+      const requestId = match.id;
+      const result = await getRequestUsers(requestId);
+      const emails = result.map(user => user.email);
+      const phones = result.map(user => user.phone);
+  
+      const updatedMatch = new Notification(
+        match.id,
+        match.pass,
+        match.resort,
+        match.park,
+        match.date,
+        [...match.emails, ...emails],
+        [...match.phones, ...phones]
+      );
+  
+      updatedMatchList.push(updatedMatch);
+    }
+  
+    return updatedMatchList;
+  }
+  
+  
+        
 
 
   
@@ -78,7 +107,7 @@ async function matchRequests(requests, availabilities) {
       const resort = request.resort;
       const available = request.available;
 
-      console.log(pass, date, park, resort, available)
+    //   console.log(pass, date, park, resort, available)
   
       const passAvail = availabilities[resort].find(avail => avail.passType === pass);
       const passAvailDates = passAvail.availabilities;
@@ -99,14 +128,14 @@ async function matchRequests(requests, availabilities) {
             // console.log(match.slots[0].available, available);
             if (match.slots[0].available !== available) {
               // add request to update list
-              match.slots[0].available === true ? newTrueList.push(new Notification(pass, resort, park, date, request.emails, request.phones)) : newFalseList.push(request.id);
+              match.slots[0].available === true ? newTrueList.push(new Notification(request.id, pass, resort, park, date, request.emails, request.phones)) : newFalseList.push(request.id);
             }
           }
         });
       }
     }
-    console.log('new true list', newTrueList)
-    console.log('new false list', newFalseList)
+    // console.log('new true list', newTrueList)
+    // console.log('new false list', newFalseList)
     
 
     // await db.User.updateMany(
@@ -117,7 +146,7 @@ async function matchRequests(requests, availabilities) {
     //     { requests: { $elemMatch: { _id: { $in: newFalseList } } } },
     //     { $set: { 'requests.$.available': false } }
     // );
-
+    // console.log('new true list', newTrueList)
     return newTrueList
     
 }

@@ -111,23 +111,37 @@ const updateAvailability = async (requests) =>{
     }
 }
 
-getRequestUsers = async (requestId) => {
+const getRequestUsers = async (requestId) => {
     const client = new Client(process.env.DATABASE_URL);
     const query = {
-        text: 'SELECT * FROM USERS_REQUEST WHERE request_id = $1;',
+        text: `
+            SELECT u.* 
+            FROM users_request AS ur 
+            JOIN users AS u ON ur.user_id = u.id
+            WHERE ur.request_id = $1;
+        `,
         values: [requestId]
-    }
+    };
     await client.connect();
     try {
         const result = await client.query(query);
-        return result;
+        // console.log(result.rows)
+        return result.rows; // Return the rows of users from the result
     } catch (err) {
         console.error('error executing query:', err);
         throw err;
     } finally {
         await client.end();
     }
-}
+};
+
+
+
+
+
+
+
+
 
 
 
