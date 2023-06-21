@@ -46,6 +46,7 @@ const authMiddleWare = (req, res, next) => {
 // LOG IN (log into a user account)
 
 router.post('/signup', (req, res) => {
+    console.log(req.body)
     bcrypt.genSalt(10, (err, salt) => {
         if (err) throw err
         bcrypt.hash(req.body.password, salt, (err, hash) => {
@@ -55,7 +56,7 @@ router.post('/signup', (req, res) => {
             createUser(req.body)
                 .then(user => {
                     console.log(user)
-                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                    const token = jwt.encode({ id: user }, config.jwtSecret)
                     res.json({ token: token })
                 })
                 .catch(() => {

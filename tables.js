@@ -40,7 +40,8 @@ const client = new Client(process.env.DATABASE_URL);
     // );
 
     const results = await client.query(
-        `SELECT * FROM users;`
+        `DELETE FROM users
+        WHERE email='heather.creel85@gmail.com';`
     );
     // const results = await client.query(
     //     `ALTER TABLE USERS

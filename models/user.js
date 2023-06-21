@@ -7,7 +7,7 @@ const createUser = async (user) => {
     const client = new Client(process.env.DATABASE_URL);
     let query = 
         {
-            test: `INSERT INTO USERS (email, password)
+            text: `INSERT INTO USERS (email, password)
                 VALUES ($1, $2)
                 RETURNING id;`,
             values: [user.email, user.password]
