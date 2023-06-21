@@ -18,6 +18,27 @@ const getAllRequests = async () => {
     }
 };
 
+const toggleAvailability = async (requestIdList) => {
+    const client = new Client(process.env.DATABASE_URL);
+    // toggle each request's availability to be true if false or false if true
+    const query = {
+        text: 'UPDATE REQUEST SET available = NOT available WHERE id = $1;',
+        values: [...requestIdList]
+    }
+    await client.connect();
+    try {
+        const result = await client.query(query);
+        return result;
+    }
+    catch (err) {
+        console.error("error executing query:", err);
+        throw err;
+    }
+    finally {
+        await client.end();
+    }
+};
+
 
 const createRequest = async (request) => {
     const client = new Client(process.env.DATABASE_URL);
@@ -95,21 +116,7 @@ const getRequestId = async (request) => {
     }
 }
 
-const updateAvailability = async (requests) =>{
-    const client = new Client(process.env.DATABASE_URL);
-    // toggle each request's availability to be true if false or false if true
 
-    await client.connect();
-    try {
-        const result = await client.query(query);
-        return result;
-    } catch (err) {
-        console.error('error executing query:', err);
-        throw err;
-    } finally {
-        await client.end();
-    }
-}
 
 const getRequestUsers = async (requestId) => {
     const client = new Client(process.env.DATABASE_URL);
@@ -146,5 +153,5 @@ const getRequestUsers = async (requestId) => {
 
 
 module.exports = {
-    createRequest, deleteRequest, getRequestId, getAllRequests, updateAvailability, getRequestById, getRequestUsers
+    createRequest, deleteRequest, getRequestId, getAllRequests, toggleAvailability, getRequestById, getRequestUsers
 }

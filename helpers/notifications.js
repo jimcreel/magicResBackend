@@ -1,17 +1,17 @@
 const db = require('../models');
 const axios = require('axios');
 const user = require('../models/user');
-const { getAllRequests, updateAvailability, getRequestUsers } = require('../models/request');
+const { getAllRequests, toggleAvailability, getRequestUsers } = require('../models/request');
 const env = require("dotenv").config();
 
 class Request {
-    constructor(pass, resort, park, date, available, _id) {
+    constructor(pass, resort, park, date, available, id) {
       this.pass = pass;
       this.resort = resort;
       this.park = park;
       this.date = date;
       this.available = available
-      this._id = _id;
+      this.id = id;
     }
   }
 
@@ -31,20 +31,25 @@ class Request {
 
 async function sendNotifications(){
     const requestList = await getNotificationList();
+    console.log(requestList)
     const availabilities = await getAvailability();
     // console.log(availabilities)
     const matchList = await matchRequests(requestList, availabilities);
     console.log('this is the match list', matchList);
-    const notificationList = await buildNotifications(matchList);
-    console.log('this is the notification list', notificationList);
+
+    if (matchList && matchList.length > 0){
+      const notificationList = await buildNotifications(matchList);
+      console.log('this is the notification list', notificationList);
+    }
 
 
 }
 
 async function buildNotifications(matchList) {
     const updatedMatchList = [];
-  
+    console.log(matchList)
     for (const match of matchList) {
+      console.log(match);
       const requestId = match.id;
       const result = await getRequestUsers(requestId);
       const emails = result.map(user => user.email);
@@ -56,8 +61,8 @@ async function buildNotifications(matchList) {
         match.resort,
         match.park,
         match.date,
-        [...match.emails, ...emails],
-        [...match.phones, ...phones]
+        match.emails, emails,
+        match.phones, phones
       );
   
       updatedMatchList.push(updatedMatch);
@@ -126,14 +131,16 @@ async function matchRequests(requests, availabilities) {
         matches.find(match => {
           if (match.facilityId === `${resort}_${park}`) {
             // console.log(match.slots[0].available, available);
-            if (match.slots[0].available !== available) {
-              // add request to update list
-              match.slots[0].available === true ? newTrueList.push(new Notification(request.id, pass, resort, park, date, request.emails, request.phones)) : newFalseList.push(request.id);
+            if (match.slots[0].available != request.available){
+                match.slots[0].available === true? newTrueList.push(new Request(pass, resort, park, date, available, request.id)): newFalseList.push(new Request(pass, resort, park, date, available, request.id))
             }
           }
         });
       }
     }
+    // flatlist the two lists into one
+    const flatList = newTrueList.concat(newFalseList)
+    toggleAvailability(flatList)
     // console.log('new true list', newTrueList)
     // console.log('new false list', newFalseList)
     
@@ -147,7 +154,7 @@ async function matchRequests(requests, availabilities) {
     //     { $set: { 'requests.$.available': false } }
     // );
     // console.log('new true list', newTrueList)
-    return newTrueList
+    return newTrueList.length > 0? newTrueList: null;
     
 }
   

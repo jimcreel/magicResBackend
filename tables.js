@@ -21,8 +21,8 @@ const client = new Client(process.env.DATABASE_URL);
     //     VALUES ('WDW', 'MK', '2021-07-01');`
     // );
     const results = await client.query(
-        `SELECT * FROM REQUEST
-        WHERE id = '875617592329732097';`
+        `UPDATE REQUEST set AVAILABLE = true;`
+        
     );
     // const results = await client.query(
     //     `CREATE TABLE IF NOT EXISTS USERS_REQUEST (
