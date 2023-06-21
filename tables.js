@@ -20,10 +20,16 @@ const client = new Client(process.env.DATABASE_URL);
     //     `INSERT INTO REQUEST (resort, park, date)
     //     VALUES ('WDW', 'MK', '2021-07-01');`
     // );
-    const results = await client.query(
-        `UPDATE REQUEST set AVAILABLE = true;`
+    // const results = await client.query(
+    //     `update request set available = false where id = '875739253990916097'`
         
-    );
+    // );
+    const results = await client.query(
+      `update request set available = false where id = '875616755645710337';`
+    )
+    // const results = await client.query(
+    //   `select * from users_request where user_id='875381838728921089';`
+    // )
     // const results = await client.query(
     //     `CREATE TABLE IF NOT EXISTS USERS_REQUEST (
     //     id SERIAL PRIMARY KEY,

@@ -3,6 +3,7 @@ const axios = require('axios');
 const user = require('../models/user');
 const { getAllRequests, toggleAvailability, getRequestUsers } = require('../models/request');
 const env = require("dotenv").config();
+const sendEmail = require('./email');
 
 class Request {
     constructor(pass, resort, park, date, available, id) {
@@ -30,26 +31,46 @@ class Request {
 
 
 async function sendNotifications(){
+  console.log('building notification list')
     const requestList = await getNotificationList();
-    console.log(requestList)
+    // console.log(requestList)
     const availabilities = await getAvailability();
     // console.log(availabilities)
     const matchList = await matchRequests(requestList, availabilities);
-    console.log('this is the match list', matchList);
+    // console.log('this is the match list', matchList);
 
     if (matchList && matchList.length > 0){
       const notificationList = await buildNotifications(matchList);
-      console.log('this is the notification list', notificationList);
+      console.log('notification list built');
+      const sentList = await sendNots(notificationList);
+    } else {
+      console.log('no notifications to send')
     }
-
+    console.log('finished')
 
 }
 
+async function sendNots(notificationList) {
+    console.log('sending notifications')
+    for (const notification of notificationList) {
+      const request = {
+        bcc: notification.emails,
+        resort: notification.resort,
+        park: notification.park,
+        date: notification.date,
+      }
+      const result = await sendEmail(request);
+      console.log(result);
+    }
+    return true;
+  }
+
 async function buildNotifications(matchList) {
+    console.log('building notifications')
     const updatedMatchList = [];
-    console.log(matchList)
+    // console.log(matchList)
     for (const match of matchList) {
-      console.log(match);
+      // console.log(match);
       const requestId = match.id;
       const result = await getRequestUsers(requestId);
       const emails = result.map(user => user.email);
@@ -138,9 +159,12 @@ async function matchRequests(requests, availabilities) {
         });
       }
     }
+    // console.log(newTrueList)
+    // console.log(newFalseList)
     // flatlist the two lists into one
     const flatList = newTrueList.concat(newFalseList)
-    toggleAvailability(flatList)
+    // toggleAvailability(flatList)
+// 
     // console.log('new true list', newTrueList)
     // console.log('new false list', newFalseList)
     
@@ -154,7 +178,7 @@ async function matchRequests(requests, availabilities) {
     //     { $set: { 'requests.$.available': false } }
     // );
     // console.log('new true list', newTrueList)
-    return newTrueList.length > 0? newTrueList: null;
+    return newTrueList;
     
 }
   

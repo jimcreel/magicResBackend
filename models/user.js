@@ -26,26 +26,38 @@ const createUser = async (user) => {
 
 
 
-const createUserRequest = async (requestId, userId) => {
-    const client = new Client(process.env.DATABASE_URL);
-    let query =
-      {
-       text: 'INSERT INTO USERS_REQUEST (user_id, request_id, notification_count, method) VALUES ($1, $2, $3, $4) RETURNING id;',
-       values: [userId, requestId, 0, 'email']
-
-      }
-    
-    await client.connect();
-    try {
-      const results = await client.query(query);
-      return results;
-    } catch (err) {
-      console.error("error executing query:", err);
-      throw err;
-    } finally {
-      await client.end();
-    }
-  }
+    const createUserRequest = async (requestId, userId) => {
+        const client = new Client(process.env.DATABASE_URL);
+        let query = {
+          text: 'SELECT id FROM USERS_REQUEST WHERE user_id = $1 AND request_id = $2;',
+          values: [userId, requestId]
+        };
+      
+        await client.connect();
+      
+        try {
+          const existingRequest = await client.query(query);
+      
+          if (existingRequest.rows.length > 0) {
+            // A user_request with the same user_id and request_id already exists
+            return null;
+          }
+      
+          query = {
+            text: 'INSERT INTO USERS_REQUEST (user_id, request_id, notification_count, method) VALUES ($1, $2, $3, $4) RETURNING id;',
+            values: [userId, requestId, 0, 'email']
+          };
+      
+          const results = await client.query(query);
+          return results;
+        } catch (err) {
+          console.error('Error executing query:', err);
+          throw err;
+        } finally {
+          await client.end();
+        }
+      };
+      
   
 
 const getUser = async (user) => {

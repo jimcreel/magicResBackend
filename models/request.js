@@ -19,25 +19,30 @@ const getAllRequests = async () => {
 };
 
 const toggleAvailability = async (requestIdList) => {
+    // console.log(requestIdList)
     const client = new Client(process.env.DATABASE_URL);
-    // toggle each request's availability to be true if false or false if true
-    const query = {
-        text: 'UPDATE REQUEST SET available = NOT available WHERE id = $1;',
-        values: [...requestIdList]
-    }
+    
     await client.connect();
+    
     try {
+      for (const requestId of requestIdList) {
+        const query = {
+          text: 'UPDATE REQUEST SET available = NOT available WHERE id = $1;',
+          values: [requestId.id]
+        };
+        
         const result = await client.query(query);
-        return result;
+      }
+      
+      return true; // or you can return a specific value indicating success
+    } catch (err) {
+      console.error('Error executing query:', err);
+      throw err;
+    } finally {
+      await client.end();
     }
-    catch (err) {
-        console.error("error executing query:", err);
-        throw err;
-    }
-    finally {
-        await client.end();
-    }
-};
+  };
+  
 
 
 const createRequest = async (request) => {
