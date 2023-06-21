@@ -12,7 +12,7 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
-const { createRequest, deleteRequest, getRequestId } = require('../models/request.js');
+const { createRequest, deleteRequest, getRequestId, getAllRequests } = require('../models/request.js');
 const { createUserRequest } = require('../models/user.js');
 
 const authMiddleWare = (req, res, next) => {
@@ -55,7 +55,12 @@ router.get('/:userId',  (req, res) => {
         .catch(err => console.log(err));
 });
 
-
+router.get ('/', (req, res) => {
+    getAllRequests()
+    .then(data =>
+      res.json(data.rows)
+      )
+})
 
 // Create Route: POST localhost:3000/requests/
 router.post('/create', authMiddleWare, (req, res) => {

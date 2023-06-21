@@ -15,6 +15,7 @@ const { default: axios } = require('axios');
 const app = express();
 const jwt = require('jwt-simple');
 const { OAuth2Client } = require('google-auth-library');
+const { sendNotifications } = require('./helpers/notifications.js')
 
 // const sendNotifications = require('./helpers/notifications').sendNotifications;
 
@@ -47,7 +48,7 @@ const PORT = process.env.PORT
 app.listen(PORT, async () => {
   console.log('Server listening on port 3000');
   // call sendNotifications on a 10 minute timer
-  // sendNotifications();
+   sendNotifications();
   // setInterval(async () => {
   //   sendNotifications()
   // }

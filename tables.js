@@ -20,9 +20,9 @@ const client = new Client(process.env.DATABASE_URL);
     //     `INSERT INTO REQUEST (resort, park, date)
     //     VALUES ('WDW', 'MK', '2021-07-01');`
     // );
-    // const results = await client.query(
-    //     `SELECT * FROM REQUEST;`
-    // );
+    const results = await client.query(
+        `SELECT * FROM REQUEST;`
+    );
     // const results = await client.query(
     //     `CREATE TABLE IF NOT EXISTS USERS_REQUEST (
     //     id SERIAL PRIMARY KEY,
@@ -44,10 +44,13 @@ const client = new Client(process.env.DATABASE_URL);
     //     WHERE email='heather.creel85@gmail.com';`
     // );
     // const results = await client.query(
-    //     `ALTER TABLE USERS
-    //     ADD COLUMN password VARCHAR(150),
-    //     ADD COLUMN passreset VARCHAR(150);`
-    //   );
+    //   // add a boolean column available with default false
+    //     `ALTER TABLE REQUEST
+    //     ADD COLUMN pass VARCHAR(150) DEFAULT 'inspire-key-pass';
+    //     `
+    // )
+       
+
     // const results = await client.query(`DROP TABLE USERS;`)
     // const results = await client.query(
     //     `CREATE TABLE IF NOT EXISTS USERS (

@@ -78,6 +78,21 @@ const getRequestId = async (request) => {
     }
 }
 
+const updateAvailability = async (requests) =>
+const client = new Client(process.env.DATABASE_URL);
+// toggle each request's availability to be true if false or false if true
+
+await client.connect();
+try {
+    const result = await client.query(query);
+    return result;
+} catch (err) {
+    console.error('error executing query:', err);
+    throw err;
+} finally {
+    await client.end();
+}
+}
 
 
 module.exports = {
