@@ -39,6 +39,7 @@ function buildSubject(request){
 }
 
 async function sendEmail(request) {
+    console.log(request)
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,

@@ -90,6 +90,26 @@ const getUserById = async (id) => {
     }
 }
 
+const getUserByHash = async (hash) => {
+    const client = new Client(process.env.DATABASE_URL);
+    let query =
+    {
+        text: `SELECT * FROM USERS WHERE passreset = $1;`,
+        values: [hash]
+    }
+    
+    await client.connect();
+    try {
+        const results = await client.query(query);
+        return results;
+    } catch (err) {
+        console.error("error executing query:", err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 const getUserRequests = async (id) => {
     console.log('getting user requests');
     const client = new Client(process.env.DATABASE_URL);
@@ -114,7 +134,7 @@ const getUserRequests = async (id) => {
 
 
 const editUser = async (user, id) => {
-    console.log(user, id)
+    
     const client = new Client(process.env.DATABASE_URL);
     let query = `UPDATE USERS SET`;
   
@@ -145,27 +165,35 @@ const editUser = async (user, id) => {
         updateColumns.push(`defaultresort = '${user.defaultresort}'`);
     }   
 
+    if (user.newPassword) {
+        updateColumns.push(`password = '${user.newPassword}'`);
+    }
+
+    if (user.passReset) {
+        updateColumns.push(`passreset = '${user.passReset}'`);
+    }
+
     if (updateColumns.length === 0) {
         throw new Error("No valid fields to update");
     }
     else{
-        query += ` ${updateColumns.join(', ')} WHERE id = '${id}';`;
-    
+
+        query += ` ${updateColumns.join(', ')} WHERE id = '${id}' RETURNING id;`; 
+        console.log(query);
         await client.connect();
         try {
-        const results = await client.query(query);
-        const newUser = await client.query(`SELECT * FROM USERS WHERE id = '${id}';`)
-        return newUser;
+            const results = await client.query(query);
+            return results;
         } catch (err) {
-        console.error("error executing query:", err);
-        throw err;
+            console.error("error executing query:", err);
+            throw err;
         } finally {
-        await client.end();
+            await client.end();
         }
     }
 }
   
 
 module.exports = {
-  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest
+  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest, getUserByHash
 };

@@ -15,7 +15,7 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
-const {createUser, getUser, getUserById, getUserRequests, editUser} = require('../models/user.js')
+const {createUser, getUser, getUserById, getUserRequests, editUser, getUserByHash} = require('../models/user.js')
 
 
 
@@ -153,29 +153,32 @@ router.put('/change-password/:hash', function (req, res) {
         bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
             if (err) throw err
             req.body.newPassword = hash
-            db.User.findOneAndUpdate({ passReset: hashUrl }, { password: req.body.newPassword }, 
-                {passReset: ''})
-                editUser(req.body)
-                .then(user => {
-                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
-                    res.json({ token: token })
-                })
-                .catch(err => {
-                    console.log(err)
-                    res.json({ data: 'Could not update the user' })
-                })
-        })
+            const user = getUserByHash(hashUrl)
+            .then (user => {
+                let payload = { newPassword: req.body.newPassword, passReset: ''}
+                editUser(payload, user.rows[0].id)
+                    .then(newUser => {
+                        console.log(newUser.rows[0].id)
+                        const token = jwt.encode({ id: newUser.rows[0].id }, config.jwtSecret)
+                        console.log(token)
+                        res.json({ token: token })
+                    })
+                    .catch(err => {
+                        console.log(err)
+                        res.json({ data: 'Could not update the user' })
+                    })
+            })
     })
+})
 })
 
 
 
 router.put('/change-password', authMiddleWare, function (req, res) {
     // check req.user.oldPassword against the db
-    
     getUserById(req.user.id)
         .then(user => {
-            bcrypt.compare(req.body.oldPassword, user.password, (err, isMatch) => {
+            bcrypt.compare(req.body.oldPassword, user.rows[0].password, (err, isMatch) => {
                 if (err) throw err
                 if (isMatch) {
                     bcrypt.genSalt(10, (err, salt) => {
@@ -183,12 +186,10 @@ router.put('/change-password', authMiddleWare, function (req, res) {
                         bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
                             if (err) throw err
                             req.body.newPassword = hash
-                            db.User.findByIdAndUpdate(
-                                req.user.id,
-                                { password: req.body.newPassword },
-                                { new: true })
-                                .then(user => {
-                                    const token = jwt.encode({ id: user.id }, config.jwtSecret)
+                            editUser(user.id, { password: req.body.newPassword })
+                                .then(newUser => {
+                                    
+                                    const token = jwt.encode({ id: newUser.rows[0].id }, config.jwtSecret)
                                     res.json({ token: token })
                                 })
                                 .catch(function (err) {
@@ -206,16 +207,13 @@ router.put('/change-password', authMiddleWare, function (req, res) {
 
 
 router.put('/password-reset/:hash'), (req, res) => {
-    db.User.find({passReset: hash})
+    getUserByHash(req.params.hash)
     .then(user => {
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(req.body.newPassword, salt, (err, hash) => {
                 if (err) throw err
                 req.body.newPassword = hash
-                db.User.findByIdAndUpdate(
-                    user._id,
-                    { password: req.body.newPassword },
-                    { new: true })
+                editUser(req.body)
                     .then(updatedUser => {
                         const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
                         res.json({ token: token })
@@ -234,8 +232,9 @@ router.put('/password-reset/:hash'), (req, res) => {
 
             
 router.post('/forgot-password', (req, res) => {
-    db.User.findOne({ email: req.body.email })
+    getUser(req.body.email)
         .then(user => {
+            console.log(user)
             if (!user) {
                 return res.status(404).json({ error: 'User not found' });
             } else {
@@ -248,16 +247,13 @@ router.post('/forgot-password', (req, res) => {
                 random += characters.charAt(Math.floor(Math.random() * charactersLength));
             }
             // console.log(random)
-            db.User.findByIdAndUpdate(
-                user._id,
-                { passReset: random },
-                { new: true }
-            )
+            let payload = { passReset: random}
+            editUser(payload, user.rows[0].id)
                 .then(updatedUser => {
                     const request = {
                         type: 'forgot-password',
-                        to: updatedUser.email,
-                        url: `https//localhost:3000/users/password-reset/${random}`
+                        to: req.body.email,
+                        url: `https://www.magic-reservations.com/change-password/${random}`
                     }
                     sendEmail(request)
                     const token = jwt.encode({ passReset: random }, config.jwtSecret);
