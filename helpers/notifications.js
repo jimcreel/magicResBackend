@@ -17,16 +17,18 @@ class Request {
   }
 
   class Notification {
-    constructor(id, pass, resort, park, date, emails, phones){
-        this.id = id;
-        this.pass = pass;
-        this.resort = resort;
-        this.park = park;
-        this.date = date;
-        this.emails = emails || [];
-        this.phones = phones || [];
+    constructor(id, pass, resort, park, date, emails, phones) {
+      this.id = id;
+      this.pass = pass;
+      this.resort = resort;
+      this.park = park;
+      this.date = date;
+      this.emails = emails || [];
+      this.phones = phones || [];
     }
-}
+  }
+  
+
 
 
 
@@ -62,20 +64,19 @@ async function sendNots(notificationList) {
         date: notification.date,
         url: 'https://tinyurl.com/5n8yetcw'
       }
-      console.log(request)
+      // console.log(request)
       const result = await sendEmail(request);
-      console.log(result);
+      // console.log(result);
     }
     return true;
   }
   }
 
-async function buildNotifications(matchList) {
+  async function buildNotifications(matchList) {
     console.log('building notifications')
     const updatedMatchList = [];
-    // console.log(matchList)
+  
     for (const match of matchList) {
-      // console.log(match);
       const requestId = match.id;
       const result = await getRequestUsers(requestId);
       const emails = result.map(user => user.email);
@@ -87,15 +88,17 @@ async function buildNotifications(matchList) {
         match.resort,
         match.park,
         match.date,
-        match.emails, emails,
-        match.phones, phones
+        emails, 
+        phones 
       );
-        console.log(updatedMatch)
+  
+      console.log(updatedMatch);
       updatedMatchList.push(updatedMatch);
     }
   
     return updatedMatchList;
   }
+  
   
   
         
