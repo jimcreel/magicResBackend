@@ -15,7 +15,7 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
-const {createUser, getUser, getUserById, getUserRequests, editUser, getUserByHash} = require('../models/user.js')
+const {createUser, getUser, getUserById, getUserRequests, editUser, getUserByHash, removeUserHash} = require('../models/user.js')
 
 
 
@@ -168,6 +168,7 @@ router.put('/change-password/:hash', function (req, res) {
                         console.log(err)
                         res.json({ data: 'Could not update the user' })
                     })
+                removeUserHash(user.rows[0].id)
             })
     })
 })
@@ -218,9 +219,11 @@ router.put('/password-reset/:hash'), (req, res) => {
                     .then(updatedUser => {
                         const token = jwt.encode({ id: updatedUser.id }, config.jwtSecret)
                         res.json({ token: token })
+                        removeUserHash(user.id)
                     })
                     .catch(function (err) {
                     })
+                
             })
     })
     })

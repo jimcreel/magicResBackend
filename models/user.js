@@ -122,6 +122,27 @@ const getUserByHash = async (hash) => {
     }
 }
 
+const removeUserHash = async (id) => {
+    const client = new Client(process.env.DATABASE_URL);
+    let query =
+    {
+        text: `UPDATE USERS SET passreset = NULL WHERE id = $1;`,
+        values: [id]
+    }
+    await client.connect();
+    try {
+        const results = await client.query(query);
+        return results;
+    } catch (err) {
+        console.error("error executing query:", err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+
+
 const getUserRequests = async (id) => {
     console.log('getting user requests');
     const client = new Client(process.env.DATABASE_URL);
@@ -207,5 +228,5 @@ const editUser = async (user, id) => {
   
 
 module.exports = {
-  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest, getUserByHash
+  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest, getUserByHash, removeUserHash
 };

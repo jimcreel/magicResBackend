@@ -24,12 +24,14 @@ const client = new Client(process.env.DATABASE_URL);
     //     `update request set available = false where id = '875739253990916097'`
         
     // );
-    const results = await 
-    client.query(
-      `delete from request;`
-    )
+    // remove all passreset from USERS
+    // const results = await 
+    // client.query(
+    //     `update users set passreset = null`
+    
+    // )
     // const results = await client.query(
-    //   `select * from request;`
+    //   `DELETE from USERS where id='875713012145127426';`
 
     // )
     
