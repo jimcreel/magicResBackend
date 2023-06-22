@@ -49,10 +49,10 @@ app.listen(PORT, async () => {
   console.log('Server listening on port 3000');
   // call sendNotifications on a 10 minute timer
    sendNotifications();
-  // setInterval(async () => {
-  //   sendNotifications()
-  // }
-  // , 600000);
+  setInterval(async () => {
+    sendNotifications()
+  }
+  , 600000);
 });
 
 

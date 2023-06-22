@@ -53,16 +53,21 @@ async function sendNotifications(){
 async function sendNots(notificationList) {
     console.log('sending notifications')
     for (const notification of notificationList) {
+      if (notification.emails.length > 0 || notification.phones.length > 0) {
       const request = {
-        bcc: notification.emails,
+        type: 'notification',
+        bcc: notification.phones,
         resort: notification.resort,
         park: notification.park,
         date: notification.date,
+        url: 'https://tinyurl.com/5n8yetcw'
       }
+      console.log(request)
       const result = await sendEmail(request);
       console.log(result);
     }
     return true;
+  }
   }
 
 async function buildNotifications(matchList) {
@@ -85,7 +90,7 @@ async function buildNotifications(matchList) {
         match.emails, emails,
         match.phones, phones
       );
-  
+        console.log(updatedMatch)
       updatedMatchList.push(updatedMatch);
     }
   
@@ -141,7 +146,8 @@ async function matchRequests(requests, availabilities) {
   
       if (request.park === 'ANY') {
         matches.find(match => {
-          if (match.slots.available === true) {
+          // console.log(match)
+          if (match.slots.some(slot => slot === true)) {
             const existingTrue = newTrueList.find((request) => request.id === match.id)
             if (!existingTrue){
                 newTrueList.push()
@@ -163,7 +169,7 @@ async function matchRequests(requests, availabilities) {
     // console.log(newFalseList)
     // flatlist the two lists into one
     const flatList = newTrueList.concat(newFalseList)
-    // toggleAvailability(flatList)
+    toggleAvailability(flatList)
 // 
     // console.log('new true list', newTrueList)
     // console.log('new false list', newFalseList)

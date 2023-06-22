@@ -24,12 +24,14 @@ const client = new Client(process.env.DATABASE_URL);
     //     `update request set available = false where id = '875739253990916097'`
         
     // );
-    const results = await client.query(
-      `update request set available = false where id = '875616755645710337';`
-    )
     // const results = await client.query(
-    //   `select * from users_request where user_id='875381838728921089';`
+    //   `update request set available = false where id = '875617989611028481';`
     // )
+    const results = await client.query(
+      `select * from request;`
+
+    )
+    
     // const results = await client.query(
     //     `CREATE TABLE IF NOT EXISTS USERS_REQUEST (
     //     id SERIAL PRIMARY KEY,
@@ -39,7 +41,7 @@ const client = new Client(process.env.DATABASE_URL);
     //     method VARCHAR(150) NOT NULL
     // );`
         // `INSERT INTO USERS_REQUEST (user_id, request_id, notification_count, method)
-        // VALUES (875372176713023489,875373187851976705, 0, 'email');`
+        // VALUES (875381838728921089,875648018796511233, 0, 'email');`
         // )
     // const results = await client.query(
     //     `INSERT INTO REQUEST (firstname, lastname, pass, email, phone)
