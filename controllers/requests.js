@@ -12,6 +12,8 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
+const { createRequest, deleteRequest, getRequestId, getAllRequests } = require('../models/request.js');
+const { createUserRequest } = require('../models/user.js');
 
 const authMiddleWare = (req, res, next) => {
     const token = req.headers.authorization;
@@ -41,15 +43,6 @@ const ensureLoggedIn = require('../config/ensureLoggedIn');
 --------------------------------------------------------------- */
 
 
-// New Route: GET localhost:3000/requests/new
-router.get('/new/:userId/:date?/:resortPark?',  (req, res) => {
-            res.render('./request/request-new.ejs', { 
-            date: req.params.date,
-            resortPark: req.params.resortPark
-         })
-         
-
-});
 
 // Show Route: GET localhost:3000/requests/:requestId
 router.get('/:userId',  (req, res) => {
@@ -62,61 +55,43 @@ router.get('/:userId',  (req, res) => {
         .catch(err => console.log(err));
 });
 
+router.get ('/', (req, res) => {
+    getAllRequests()
+    .then(data =>
+      res.json(data.rows)
+      )
+})
 
-// Create Route: POST localhost:3000/requests/
 // Create Route: POST localhost:3000/requests/
 router.post('/create', authMiddleWare, (req, res) => {
     
-    
-    const request = {
-        ...req.body,
-        userId: req.user.id
-    }
-    
-    db.User.findByIdAndUpdate(
-        req.user.id, // Corrected user ID syntax
-        { $push: { requests: req.body } },
-        { new: true }
-    )
-        .then(result => res.json(result))
-        .catch(err => console.log(err))
+    const requestId = getRequestId(req.body)
+    .then(requestId => {
+        if (requestId.rows.length === 0){
+            createRequest(req.body)
+            .then(result => 
+                createUserRequest(result.rows[0].id, req.user.id)
+                .then(result => res.json(result))
+                .catch(err => console.log(err))
+            )
+            .catch(err => console.log(err))
+
+        } else {
+            createUserRequest(requestId.rows[0].id, req.user.id)
+            .then(result => res.json(result))
+            .catch(err => console.log(err))
+
+        }
+    })
+    .catch(err => console.log(err))
+
+
         
 });
 
-
-router.get('/:requestId/edit', authMiddleWare, (req, res) => {
-    db.User.findOne({ 'requests._id': req.params.requestId })
-        .then(user => {
-            const request = user.requests.id(req.params.requestId)
-            res.render('./request/request-edit.ejs', {
-                user: user,
-                request: request
-            })
-        })
-});
-
-
-router.put('/:requestId',  (req, res) => {
-    db.User.findOneAndUpdate({ 'requests._id': req.params.requestId},
-    {$set: {
-        'requests.$.date': req.body.date,
-        'requests.$.resort': req.body.resort,
-        'requests.$.pass': req.body.pass,
-        'requests.$.park': req.body.park
-    }
-    }, {new: true})
-        .then(user => 
-        res.redirect(`/users/${req.user.id}`))
-    });
-
-
-// Destroy Route: DELETE localhost:3000/reviews/:id
+// Destroy Route: DELETE localhost:3000/requests/:id
 router.delete('/:id', authMiddleWare, (req, res) => {
-    db.User.findOneAndUpdate(
-        { 'requests._id': req.params.id },
-        { $pull: { requests: { _id: req.params.id } } },
-        { new: true }
-    )
+    deleteRequest(req.params.id)
         .then(item =>
             res.json(item)
         )

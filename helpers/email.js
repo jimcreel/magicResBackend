@@ -1,6 +1,7 @@
 // send an email from notifications@magic-reservations.com
 const nodemailer = require('nodemailer')
 require ('dotenv').config()
+const { getText, changeDateFormat } = require('./getText')
 
 
 
@@ -10,7 +11,7 @@ const messages = [
    {
     "type": "forgot-password",
     "subject": "Magic Reservations Password Reset",
-    "body": "Hello, \n\nYou are receiving this email because you (or someone else) have requested the reset of the password for your account. \n\nPlease click on the following link, or paste this into your browser to complete the process: \n\nhttp://localhost:3000/ \n\nIf you did not request this, please ignore this email and your password will remain unchanged. \n\nThank you, \n\nMagic Reservations"
+    "body": "Hello, \n\nYou are receiving this email because you (or someone else) have requested the reset of the password for your account. \n\nPlease click on the following link, or paste this into your browser to complete the process: \n\n{url} \n\nIf you did not request this, please ignore this email and your password will remain unchanged. \n\nThank you, \n\nMagic Reservations"
     },
     {
     "type": "notification",
@@ -19,13 +20,15 @@ const messages = [
     }
 ]
 
+
+
 function buildBody (request){
-    if (request.type = 'forgot-password'){
+    if (request.type === 'forgot-password'){
         const msg = messages.find(m => m.type === request.type)
-        return msg.body.replace('http://localhost:3000/', request.url)
-    } else if (request.type = 'notification'){
+        return msg.body.replace('{url}', request.url)
+    } else if (request.type === 'notification'){
         const msg = messages.find(m => m.type === request.type)
-        return msg.body.replace('http://localhost:3000/', request.url).replace('{resort}', request.resort).replace('{date}', request.date).replace('{park}', request.park)
+        return msg.body.replace('{url}', request.url).replace('{resort}', getText(request.resort)).replace('{date}', changeDateFormat(request.date)).replace('{park}', getText(request.park))
     }
 }
 
@@ -34,22 +37,22 @@ function buildSubject(request){
     if (request.type === 'forgot-password'){
         return msg.subject
     } else if (request.type === 'notification'){
-        return msg.subject.replace('{resort}', request.resort).replace('{date}', request.date).replace('{park}', request.park)
+        return msg.subject.replace('{resort}', getText(request.resort)).replace('{date}', changeDateFormat(request.date)).replace('{park}', getText(request.park))
     }
 }
 
 async function sendEmail(request) {
+    console.log(request)
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
+        tls: {
+            rejectUnauthorized: false
+        },
         auth: {
-            type: "OAuth2",
-            user: process.env.EMAIL,
-            clientId: process.env.CLIENT_ID,
-            clientSecret: process.env.CLIENT_SECRET,
-            refreshToken: process.env.REFRESH_TOKEN,
-            accessToken: process.env.ACCESS_TOKEN,
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASS,
             
         },
     });
@@ -57,7 +60,7 @@ async function sendEmail(request) {
     console.log(transporter)
     let info = await transporter.sendMail({
         from: '"Magic Reservations" <notifications@magic-reservations.com>',
-        to: request.to,
+        to: request.bcc,
         subject: buildSubject(request),
         text: buildBody(request),
     });
