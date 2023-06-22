@@ -58,7 +58,7 @@ async function sendNots(notificationList) {
       if (notification.emails.length > 0 || notification.phones.length > 0) {
       const request = {
         type: 'notification',
-        bcc: notification.phones,
+        bcc: notification.emails,
         resort: notification.resort,
         park: notification.park,
         date: notification.date,
@@ -148,15 +148,18 @@ async function matchRequests(requests, availabilities) {
       const matches = passAvailDates.filter(avail => avail.date === date);
   
       if (request.park === 'ANY') {
-        matches.find(match => {
-          // console.log(match)
-          if (match.slots.some(slot => slot === true)) {
-            const existingTrue = newTrueList.find((request) => request.id === match.id)
-            if (!existingTrue){
-                newTrueList.push()
+        let anyTrue = false
+        matches.forEach(match =>{
+          if (match.slots[0].available === true){
+            anyTrue = true
+            if (request.available === false){
+              newTrueList.push(new Request(pass, resort, park, date, available, request.id))
             }
           }
         });
+        if (!anyTrue && request.available === true){
+          newFalseList.push(new Request(pass, resort, park, date, available, request.id))
+        }
       } else {
         matches.find(match => {
           if (match.facilityId === `${resort}_${park}`) {

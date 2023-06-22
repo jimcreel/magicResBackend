@@ -24,8 +24,9 @@ const client = new Client(process.env.DATABASE_URL);
     //     `update request set available = false where id = '875739253990916097'`
         
     // );
-    const results = await client.query(
-      `update request set available = false where id = '875739253990916097';`
+    const results = await 
+    client.query(
+      `delete from request;`
     )
     // const results = await client.query(
     //   `select * from request;`
