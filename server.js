@@ -10,6 +10,7 @@ const cors = require('cors');
 const db = require('./models');
 const requestsCtrl = require('./controllers/requests')
 const usersCtrl = require('./controllers/users')
+const diningCtrl = require('./controllers/dining')
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { default: axios } = require('axios');
 const app = express();
@@ -76,6 +77,7 @@ app.use(session({
 
 app.use('/api/requests', require('./controllers/requests'))
 app.use('/api/users', require('./controllers/users'))
+app.use('/api/dining', require('./controllers/dining'))
 
 
 

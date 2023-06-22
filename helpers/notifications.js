@@ -99,7 +99,15 @@ async function sendNots(notificationList) {
     return updatedMatchList;
   }
   
+async function getDining(req) {
+  const { resort, restaurantId, entityType, date, type, time } = req;
+  const timeType = `?${type}=${time}`
   
+  let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/dining-availability/%7Bswid%7D/dlr/${restaurantId};entityType=${entityType}/table-service/2/${date}/${timeType}`)
+   
+   console.log(result.data)
+   return result.data
+} 
   
         
 
@@ -198,5 +206,5 @@ async function matchRequests(requests, availabilities) {
 
 
 module.exports = {
-   sendNotifications
+   sendNotifications, getDining
 }
