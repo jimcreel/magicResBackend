@@ -12,7 +12,7 @@ const express = require('express')
 const router = express.Router()
 const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
-const {getDining} = require('../helpers/notifications.js')
+const {getDining, getAllRestaurants} = require('../helpers/notifications.js')
 
 const authMiddleWare = (req, res, next) => {
     const token = req.headers.authorization;
@@ -44,7 +44,7 @@ const ensureLoggedIn = require('../config/ensureLoggedIn');
 
 
 router.get ('/', (req, res) => {
-    getDining(req.body)
+    getAllRestaurants(req.body)
     .then(data =>
       res.json(data)
       )
