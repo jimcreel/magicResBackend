@@ -113,6 +113,8 @@ async function getAllRestaurants(req) {
 } 
   const timeType = `?${request.type}=${request.time}`
   let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/dining-availability-list/true/dlr/80008297;entityType=destination/${request.date}/2/${timeType}`, headers)
+  console.log(result.data)
+  return result.data
 } 
 
 async function getDining(req) {
