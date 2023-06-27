@@ -15,7 +15,8 @@ const config = require('../jwt.config.js')
 const jwt = require('jwt-simple');
 const sendEmail = require('../helpers/email.js')
 const { OAuth2Client } = require('google-auth-library');
-const {createUser, getUser, getUserById, getUserRequests, editUser, getUserByHash, removeUserHash} = require('../models/user.js')
+const {createUser, getUser, getUserById, getUserRequests, editUser, getUserByHash, removeUserHash, setAllRequests} = require('../models/user.js')
+const { sendNotifications } = require('../helpers/notifications.js')
 
 
 
@@ -275,11 +276,25 @@ router.post('/forgot-password', (req, res) => {
     })
 });
 
+router.get('/setAllRequests', authMiddleWare, (req, res) => {
+    setAllRequests(req.user.id)
+    .then(data => {
+        res.json(data)
+    })
+    .catch(err => {
+        console.log(err)
+    })
+})
 
-
-
-
-
+router.get('/checkAllRequests', authMiddleWare, (req, res) => {
+    sendNotifications()
+    .then(data => {
+        res.json(data)
+    })
+    .catch(err => {
+        console.log(err)
+    })
+})
 
 router.put('/', authMiddleWare, function (req, res) {
     

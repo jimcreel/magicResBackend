@@ -60,7 +60,7 @@ async function sendEmail(request) {
     console.log(transporter)
     let info = await transporter.sendMail({
         from: '"Magic Reservations" <notifications@magic-reservations.com>',
-        to: request.bcc,
+        bcc: request.bcc,
         subject: buildSubject(request),
         text: buildBody(request),
     });

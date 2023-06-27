@@ -91,7 +91,7 @@ router.post('/create', authMiddleWare, (req, res) => {
 
 // Destroy Route: DELETE localhost:3000/requests/:id
 router.delete('/:id', authMiddleWare, (req, res) => {
-    deleteRequest(req.params.id)
+    deleteRequest(req.params.id, req.user.id)
         .then(item =>
             res.json(item)
         )

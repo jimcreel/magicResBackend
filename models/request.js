@@ -67,14 +67,17 @@ const createRequest = async (request) => {
     }
 }
 
-const deleteRequest = async (requestId) => {
+const deleteRequest = async (requestId, userId) => {
     const client = new Client(process.env.DATABASE_URL);
-    const query = 'DELETE FROM USERS_REQUEST WHERE request_id = $1;';
-    const values = [requestId];
+    const query = {
+        text: 'DELETE FROM USERS_REQUEST WHERE request_id = $1 AND user_id = $2;',
+        values: [requestId, userId]
+    }
+    
 
     await client.connect();
     try {
-        const result = await client.query(query, values);
+        const result = await client.query(query);
         return result;
 
         

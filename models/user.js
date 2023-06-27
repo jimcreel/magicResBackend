@@ -165,6 +165,27 @@ const getUserRequests = async (id) => {
     }
 }
 
+const setAllRequests = async (id) => {
+    console.log('setting all requests to unavailable');
+    const client = new Client(process.env.DATABASE_URL);
+    let query =
+    {
+        text: `UPDATE REQUEST SET available = false WHERE id IN (SELECT request_id FROM USERS_REQUEST WHERE user_id = $1);`,
+        values: [id]
+    }
+    await client.connect();
+    try {
+        const results = await client.query(query);
+        return results;
+    } catch (err) {
+        console.error("error executing query:", err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+
 
 const editUser = async (user, id) => {
     
@@ -228,5 +249,5 @@ const editUser = async (user, id) => {
   
 
 module.exports = {
-  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest, getUserByHash, removeUserHash
+  createUser, getUser, getUserById, getUserRequests, editUser, createUserRequest, getUserByHash, removeUserHash, setAllRequests
 };

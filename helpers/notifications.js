@@ -4,6 +4,12 @@ const user = require('../models/user');
 const { getAllRequests, toggleAvailability, getRequestUsers } = require('../models/request');
 const env = require("dotenv").config();
 const sendEmail = require('./email');
+// let request = require('request-promise');
+const tough = require('tough-cookie');
+
+// axiosCookieJarSupport(axios);
+// const cookieJar = new tough.CookieJar()
+
 
 class Request {
     constructor(pass, resort, park, date, available, id) {
@@ -99,35 +105,26 @@ async function sendNots(notificationList) {
     return updatedMatchList;
   }
 async function getAllRestaurants(req) {
-  const headers = { headers: 
-    { 
-        'Content-Type': 'application/json'
-    }
-};
-  let request = {
-    resort: 'DLR',
-    date: '2023-08-21',
-    type: 'mealPeriod',
-    time: '80000717'
+ 
+  const result = await axios.get(`https://disneyland.disney.go.com`);
+  const cookieString = result.headers['set-cookie'][0];
+  console.log(cookieString.split(';')[0])
 
-} 
-  const timeType = `?${request.type}=${request.time}`
-  let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/dining-availability-list/true/dlr/80008297;entityType=destination/${request.date}/2/${timeType}`, headers)
-  console.log(result.data)
-  return result.data
+  // let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/list-ancestor-entities/dlr/80008297;entityType=destination/2023-06-22/dining`, headers)
+  // console.log(result.data)
+  // return result.data
 } 
 
 async function getDining(req) {
   const headers = { headers: 
     { 
-        'Authorization': localStorage.getItem('userToken'),
         'Content-Type': 'application/json'
     }
 };
   const { resort, restaurantId, entityType, date, type, time } = req;
   const timeType = `?${type}=${time}`
   
-  let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/dining-availability/%7Bswid%7D/dlr/${restaurantId};entityType=${entityType}/table-service/2/${date}/${timeType}`, headers)
+  let result = await axios.get(`https://disneyland.disney.go.com/finder/api/v1/explorer-service/dining-availability/%7Bswid%7D/dlr/${restaurantId};entityType=${entityType}/table-service/2/${date}/${timeType}`)
    
    console.log(result.data)
    return result.data
