@@ -27,16 +27,13 @@ class Request {
       this.phones = phones || [];
     }
   }
-  
 
 
-
-
-async function sendNotifications(){
+async function sendNotifications(availabilities){
   console.log('building notification list')
     const requestList = await getNotificationList();
     // console.log(requestList)
-    const availabilities = await getAvailability();
+    
     // console.log(availabilities)
     const matchList = await matchRequests(requestList, availabilities);
     // console.log('this is the match list', matchList);
@@ -198,5 +195,5 @@ async function matchRequests(requests, availabilities) {
 
 
 module.exports = {
-   sendNotifications
+   sendNotifications, getAvailability
 }
