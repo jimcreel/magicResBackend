@@ -107,41 +107,7 @@ app.get('/api/availability/:resort/:pass', async (req, res) => {
 
 
 
-app.get('/error', (req, res) => res.send("error logging in"));
 
-
-app.get('/', function (req, res) {
-    
-    res.render('index', {user: req.user});
-})
-
-app.get('/home/:resort', function (req, res) {
-    let resort = req.params.resort;
-    db.api.getResorts(req, res, resort)
-    .then(availabilities => {
-        res.render('home', 
-        {availabilities: availabilities,
-        resort: resort})
-    })
-})
-
-
-
-app.get('/seed', function (req, res) {
-    db.User.findByIdAndUpdate(userID,
-    { $push: { requests: testRequests } },
-        { new: true }
-    )
-    .then(result => res.json(result))
-    .catch(err => console.log(err))
-}
-)
-
-app.get('/logout', function(req, res){
-    req.logout(function() {
-      res.render('index');
-    });
-  });
 
 
 
