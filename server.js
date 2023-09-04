@@ -94,6 +94,9 @@ app.get('/api/availability/:resort/:pass', async (req, res) => {
   let resort = req.params.resort;
     
   let pass = req.params.pass
+  if (!availabilities[resort]) {
+    availabilities[resort] = await getAvailability(resort)
+  }
   let cacheAvail = availabilities[resort].filter (avail => avail.passType === pass)
   res.json(cacheAvail)
 });
