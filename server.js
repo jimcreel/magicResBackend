@@ -101,7 +101,11 @@ app.get('/api/availability/:resort/:pass', async (req, res) => {
   res.json(cacheAvail)
 });
   
-
+app.get('/api/passes/:resort', async (req, res) => {
+  let resort = req.params.resort;
+  let passList = availabilities[resort].map (avail => avail.passType)
+  res.json(passList)
+});
 
 
 
