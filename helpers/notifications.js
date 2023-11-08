@@ -103,10 +103,23 @@ async function sendNots(notificationList) {
 
   
 
-async function getAvailability() {
-    let dlr = await axios.get('https://disneyland.disney.go.com/passes/blockout-dates/api/get-availability/?product-types=inspire-key-pass,dream-key-pass,imagine-key-pass,enchant-key-pass,believe-key-pass&destinationId=DLR&numMonths=14')
-    let wdw = await axios.get('https://disneyworld.disney.go.com/passes/blockout-dates/api/get-availability/?product-types=disney-incredi-pass,disney-sorcerer-pass,disney-pirate-pass,disney-pixie-dust-pass&destinationId=WDW&numMonths=14')
-    return {DLR: dlr.data, WDW: wdw.data}
+  async function getAvailability() {
+    try {
+        // Dynamically import the JSON data as a module
+        const dlrdata = await import('./dlr.json', {
+            assert: { type: 'json' }
+        });
+        
+        // Now dlrdata is the module object, and the default export is the actual JSON data
+        let dlr = {
+            data: dlrdata.default
+        };
+
+        return { DLR: dlr.data };
+    } catch (error) {
+        console.error('Error loading availability data:', error);
+        throw error; // Rethrow the error after logging it
+    }
 }
 
 async function getNotificationList() {
